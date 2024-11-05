@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    <form id="billForm">
+      <label>Description:</label><br>
+      <textarea name="description" required></textarea><br><br>
+
+      <label>Date:</label><br>
+      <input type="date" name="date" required><br><br>
+
+      <label>Total Amount:</label><br>
+      <input type="number" name="amount" step="0.01" required><br><br>
+
+      <label>Split Type:</label><br>
+      <select name="splitType">
+        <option value="percentage">Percentage</option>
+        <option value="amount">Dollar Amount</option>
+      </select><br><br>
+
+      <label>Receipt Link (optional):</label><br>
+      <input type="text" name="receiptLink"><br><br>
+
+      <div>
+        <label>Who Paid:</label><br>
+        <input type="text" name="payer" placeholder="Name of payer" required><br><br>
+      </div>
+
+      <div>
+        <label>Members (Name and Split):</label><br>
+        <div id="members"></div>
+        <button type="button" onclick="addMember()">Add Member</button>
+        <button type="button" onclick="removeMember()">Remove Member</button><br><br>
+      </div>
+
+      <button type="button" onclick="submitForm()">Submit</button>
+    </form>
+
+    <script>
+      function addMember() {
+        const membersDiv = document.getElementById("members");
+        const member = document.createElement("div");
+        member.className = "member";
+        member.innerHTML = `
+          <input type="text" name="memberName" placeholder="Name" required>
+          <input type="text" name="memberSplit" placeholder="Split" required><br><br>
+        `;
+        membersDiv.appendChild(member);
+      }
+
+      function removeMember() {
+        const membersDiv = document.getElementById("members");
+        if (membersDiv.lastChild) {
+          membersDiv.removeChild(membersDiv.lastChild);
+        }
+      }
+
+      function submitForm() {
+        const form = document.getElementById("billForm");
+        const formData = new FormData(form);
+        
+        // Prepare data to send
+        const data = {
+          description: formData.get('description'),
+          date: formData.get('date'),
+          amount: parseFloat(formData.get('amount')),
+          payer: formData.get('payer'),
+          splitType: formData.get('splitType'),
+          receiptLink: formData.get('receiptLink'),
+          members: []
+        };
+
+        formData.getAll('memberName').forEach((name, i) => {
+          data.members.push({
+            name: name,
+            split: parseFloat(formData.getAll('memberSplit')[i])
+          });
+        });
+
+        google.script.run.addBillToSheet(data);
+        google.script.host.close();
+      }
+    </script>
+  </body>
+</html>
