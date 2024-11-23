@@ -15,14 +15,11 @@
       <input type="number" name="amount" step="0.01" required><br><br>
 
       <label>Split Type:</label><br>
-      <select name="splitType">
+      <select name="splitType" onchange="resetMemberSplits()">
         <option value="percentage">Percentage</option>
         <option value="amount">Dollar Amount</option>
       </select><br><br>
-
-      <label>Receipt Link (optional):</label><br>
-      <input type="text" name="receiptLink"><br><br>
-
+      
       <div>
         <label>Who Paid:</label><br>
         <input type="text" name="payer" placeholder="Name of payer" required><br><br>
@@ -39,17 +36,36 @@
     </form>
 
     <script>
+      let totalAmount = 0; // Store the total amount from the form
+      let splitType = 'percentage'; // Default split type
+      let documents = []; // Store document links
+
+      // Update the total amount when it changes
+      document.querySelector('[name="amount"]').addEventListener('input', function() {
+        totalAmount = parseFloat(this.value);
+        calculateRemainingSplit();
+      });
+
+      // Update the split type when it changes
+      document.querySelector('[name="splitType"]').addEventListener('change', function() {
+        splitType = this.value;
+        resetMemberSplits();
+      });
+
+      // Add a new member field for input
       function addMember() {
         const membersDiv = document.getElementById("members");
         const member = document.createElement("div");
         member.className = "member";
-        member.innerHTML = `
-          <input type="text" name="memberName" placeholder="Name" required>
-          <input type="text" name="memberSplit" placeholder="Split" required><br><br>
+        member.innerHTML = ` 
+          <input type="text" name="memberName" placeholder="Name" required> 
+          <input type="number" name="memberSplit" placeholder="Split" required onchange="updateSplit()"><br><br>
         `;
         membersDiv.appendChild(member);
+        calculateRemainingSplit();
       }
 
+      // Remove the last member field
       function removeMember() {
         const membersDiv = document.getElementById("members");
         if (membersDiv.lastChild) {
@@ -57,10 +73,158 @@
         }
       }
 
+      // Recalculate the remaining split (either amount or percentage)
+      function calculateRemainingSplit() {
+        const splits = document.querySelectorAll('input[name="memberSplit"]');
+        const totalInputs = splits.length;
+        if (splitType === 'percentage') {
+          let totalSplit = 0;
+          splits.forEach((input, index) => {
+            if (index === totalInputs - 1) {
+              input.value = (100 - totalSplit).toFixed(2); // Ensure last member gets remainder
+            }
+            totalSplit += parseFloat(input.value) || 0;
+          });
+        } else if (splitType === 'amount') {
+          let totalAmountSplit = 0;
+          splits.forEach((input, index) => {
+            if (index === totalInputs - 1) {
+              input.value = (totalAmount - totalAmountSplit).toFixed(2); // Ensure last member gets remainder
+            }
+            totalAmountSplit += parseFloat(input.value) || 0;
+          });
+        }
+      }
+
+      // Function to update splits when one is modified
+      function updateSplit() {
+        const splits = document.querySelectorAll('input[name="memberSplit"]');
+        const totalInputs = splits.length;
+        if (splitType === 'percentage') {
+          let totalSplit = 0;
+          splits.forEach((input, index) => {
+            if (input.value === '') return; // Skip empty inputs
+            const currentSplit = parseFloat(input.value);
+            totalSplit += currentSplit;
+            // If totalSplit exceeds 100%, show an error
+            if (totalSplit > 100) {
+              input.setCustomValidity('The total percentage cannot exceed 100%');
+            } else {
+              input.setCustomValidity(''); 
+            }
+            // Set the last member split to ensure total equals 100%
+            if (index === totalInputs - 1) {
+              const remainingPercentage = 100 - totalSplit + currentSplit;
+              if (remainingPercentage >= 0) {
+                input.value = remainingPercentage.toFixed(2);
+              }
+            }
+          });
+        } else if (splitType === 'amount') {
+          let totalAmountSplit = 0;
+          splits.forEach((input, index) => {
+            if (input.value === '') return; // Skip empty inputs
+            const currentAmount = parseFloat(input.value);
+            totalAmountSplit += currentAmount;
+            // If totalAmountSplit exceeds totalAmount, show an error
+            if (totalAmountSplit > totalAmount) {
+              input.setCustomValidity('The total amount cannot exceed the total specified.');
+            } else {
+              input.setCustomValidity(''); 
+            }
+            // Set the last member split to ensure total matches the total amount
+            if (index === totalInputs - 1) {
+              const remainingAmount = totalAmount - totalAmountSplit + currentAmount;
+              if (remainingAmount >= 0) {
+                input.value = remainingAmount.toFixed(2);
+              }
+            }
+          });
+        }
+      }
+
+      // Reset all member splits when the split type changes
+      function resetMemberSplits() {
+        const splits = document.querySelectorAll('input[name="memberSplit"]');
+        splits.forEach(input => {
+          input.value = ''; // Reset all member splits
+        });
+        calculateRemainingSplit();
+      }
+
+      // Update the document list when files are uploaded
+      // Update the document list when files are uploaded
+function updateDocumentList() {
+    const fileInput = document.getElementById('fileUpload');
+    const files = Array.from(fileInput.files);
+    documents = files.map(file => file.name);
+    displayDocumentList();
+
+    // Convert files to base64 and upload to Google Drive
+    files.forEach(file => {
+        convertFileToBase64(file)
+            .then(base64Content => {
+                uploadFileToDrive(file.name, base64Content, file.type);
+            })
+            .catch(error => {
+                console.error('Error converting file:', error);
+            });
+    });
+}
+
+// Convert file to Base64 string
+function convertFileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            resolve(reader.result.split(',')[1]); // Remove data URL prefix
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// Upload file to Google Drive and save to a specific folder
+function uploadFileToDrive(fileName, base64Content, mimeType) {
+    const folderId = 'your-folder-id'; // Replace with your target folder ID
+    const folderPath = 'entry-subfolder'; // The name of the subfolder where you want the file to go
+
+    // Call Apps Script function to upload the file
+    google.script.run
+        .withSuccessHandler(response => {
+            console.log('File uploaded successfully:', response);
+        })
+        .withFailureHandler(error => {
+            console.error('Error uploading file:', error);
+        })
+        .uploadFileToGoogleDrive({
+            name: fileName,
+            content: base64Content,
+            mimeType: mimeType
+        }, folderId, folderPath);
+}
+
+      // Display the list of uploaded documents
+      function displayDocumentList() {
+        const documentListDiv = document.getElementById('documentList');
+        documentListDiv.innerHTML = documents.map((doc, index) => `
+          <div>
+            ${doc} <button type="button" onclick="removeDocument(${index})">Remove</button>
+          </div>
+        `).join('');
+      }
+
+      // Remove a specific document from the list
+      function removeDocument(index) {
+        documents.splice(index, 1);
+        displayDocumentList();
+      }
+
+      // Submit the form data
       function submitForm() {
         const form = document.getElementById("billForm");
         const formData = new FormData(form);
-        
+
         // Prepare data to send
         const data = {
           description: formData.get('description'),
@@ -68,7 +232,7 @@
           amount: parseFloat(formData.get('amount')),
           payer: formData.get('payer'),
           splitType: formData.get('splitType'),
-          receiptLink: formData.get('receiptLink'),
+          documents: documents,
           members: []
         };
 
@@ -79,9 +243,11 @@
           });
         });
 
+        // Call Apps Script to add bill data to the sheet
         google.script.run.addBillToSheet(data);
         google.script.host.close();
       }
     </script>
   </body>
 </html>
+
