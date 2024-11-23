@@ -95,7 +95,10 @@ function getOrCreateFolder(folderName) {
   if (folders.hasNext()) {
     return folders.next();
   } else {
-    return DriveApp.createFolder(folderName);
+    const newFolder = DriveApp.createFolder(folderName);
+    // Set permissions to allow anyone with the link to view
+    newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return newFolder;
   }
 }
 
@@ -104,8 +107,10 @@ function getOrCreateFolderInFolder(parentFolder, folderName) {
   if (folders.hasNext()) {
     return folders.next();
   } else {
-    return parentFolder.createFolder(folderName);
+    const newFolder = parentFolder.createFolder(folderName);
+    // Set permissions to allow anyone with the link to view
+    newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return newFolder;
   }
 }
-
 
