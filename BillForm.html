@@ -2,6 +2,123 @@
 <html>
   <head>
     <base target="_top">
+<style>
+  body {
+    font-family: 'Roboto', sans-serif; /* Professional font */
+    background-color: #f9f9f9; /* Subtle background for better contrast */
+    color: #333; /* Dark gray for text */
+    font-weight: 500; /* Consistent font weight */
+  }
+
+  form {
+    font-size: 14px; /* Slightly larger font for better readability */
+    color: #444; /* Softer gray for form text */
+    font-weight: 500; /* Ensure font weight consistency */
+  }
+
+  label {
+    color: #222; /* Darker gray for labels */
+    font-weight: 500; /* Consistent font weight */
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: #3b82f6; /* Highlight border on focus */
+    box-shadow: 0 0 4px rgba(59, 130, 246, 0.5); /* Subtle glow effect */
+    outline: none; /* Remove default outline */
+  }
+
+  textarea {
+    resize: vertical; /* Allow vertical resizing but not horizontal */
+    height: 80px; /* Default height for better usability */
+    font-weight: 500; /* Consistent font weight */
+  }
+
+  select {
+    cursor: pointer;
+    background-color: #fff;
+    font-weight: 500; /* Consistent font weight */
+  }
+
+  /* Style for smaller action buttons (Add Payer, Remove Payer, Add Member, Remove Member) */
+  button[type="button"] {
+    padding: 7px 11px; /* Smaller padding */
+    font-size: 12px; /* Smaller font size */
+    color: #fff;
+    background-color: #3b82f6;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: 500;
+  }
+
+  /* Hover effect for smaller buttons */
+  button[type="button"]:hover {
+    background-color: #2563eb;
+  }
+
+  button[type="button"]:not(:last-child) {
+    margin-right: 6px; /* Spacing between buttons */
+  }
+
+  /* Style for the Submit button (slightly bigger than the action buttons) */
+button[type="submit"] {
+  padding: 14px 20px;
+  font-size: 14px;
+  color: #fff;
+  background-color: #1abc9c; /* Teal color */
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-weight: 500;
+}
+
+/* Hover effect for the Submit button */
+button[type="submit"]:hover {
+  background-color: #16a085; /* Darker teal on hover */
+}
+
+  /* Target only the Description, Date, Total Amount, and Split Type input fields */
+form input[name="description"], 
+form input[name="date"], 
+form input[name="amount"], 
+form select[name="splitType"],
+form textarea[name="description"] {
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  color: #333;
+  border: 1px solid #ccc; /* Light border for inputs */
+  border-radius: 4px; /* Rounded corners for inputs */
+  padding: 4px 8px; /* Reduced padding to shrink height */
+  width: 100%; /* Full-width for better alignment */
+  box-sizing: border-box; /* Consistent sizing across browsers */
+  background-color: #fff; /* Clean white background */
+  transition: border-color 0.3s, box-shadow 0.3s;
+  font-weight: 500; /* Consistent font weight */
+}
+
+/* Target only the input, select, and textarea inside the Who Paid and Members sections */
+form #payers input, 
+form #members input, 
+form #payers select, 
+form #members select, 
+form #payers textarea, 
+form #members textarea {
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  color: #333;
+  border: 1px solid #ccc; /* Light border for inputs */
+  border-radius: 4px; /* Rounded corners for inputs */
+  padding: 4px 8px; /* Reduced padding to shrink height */
+  background-color: #fff; /* Clean white background */
+  transition: border-color 0.3s, box-shadow 0.3s;
+  font-weight: 500; /* Consistent font weight */
+}
+
+  
+</style>
+
   </head>
   <body>
     <form id="billForm">
