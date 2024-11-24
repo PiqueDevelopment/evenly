@@ -22,7 +22,9 @@
       
       <div>
         <label>Who Paid:</label><br>
-        <input type="text" name="payer" placeholder="Name of payer" required><br><br>
+        <div id="payers"></div>
+        <button type="button" onclick="addPayer()">Add Payer</button>
+        <button type="button" onclick="removePayer()">Remove Payer</button><br><br>
       </div>
 
       <div>
@@ -70,6 +72,26 @@
         const membersDiv = document.getElementById("members");
         if (membersDiv.lastChild) {
           membersDiv.removeChild(membersDiv.lastChild);
+        }
+      }
+
+      // Add a new payer field for input
+      function addPayer() {
+        const payersDiv = document.getElementById("payers");
+        const payer = document.createElement("div");
+        payer.className = "payer";
+        payer.innerHTML = ` 
+          <input type="text" name="payerName" placeholder="Name" required> 
+          <input type="number" name="payerAmount" placeholder="Amount" required><br><br>
+        `;
+        payersDiv.appendChild(payer);
+      }
+
+      // Remove the last payer field
+      function removePayer() {
+        const payersDiv = document.getElementById("payers");
+        if (payersDiv.lastChild) {
+          payersDiv.removeChild(payersDiv.lastChild);
         }
       }
 
@@ -230,10 +252,10 @@ function uploadFileToDrive(fileName, base64Content, mimeType) {
           description: formData.get('description'),
           date: formData.get('date'),
           amount: parseFloat(formData.get('amount')),
-          payer: formData.get('payer'),
           splitType: formData.get('splitType'),
           documents: documents,
-          members: []
+          members: [],
+          payers: []
         };
 
         formData.getAll('memberName').forEach((name, i) => {
@@ -243,11 +265,75 @@ function uploadFileToDrive(fileName, base64Content, mimeType) {
           });
         });
 
+        formData.getAll('payerName').forEach((name, i) => {
+          data.payers.push({
+            name: name,
+            amount: parseFloat(formData.getAll('payerAmount')[i])
+          });
+        });
+
         // Call Apps Script to add bill data to the sheet
         google.script.run.addBillToSheet(data);
         google.script.host.close();
       }
+
+      function addBillToSheet(data) {
+        const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+        
+        // Check if sheet is empty and add headers if needed
+        if (sheet.getLastRow() === 0) {
+          const headers = [
+            'Unique ID', 
+            'Description', 
+            'Date', 
+            'Total Amount', 
+            'Who Paid', 
+            'Contribution Split', 
+            'Balance Split', 
+            'Entry Folder Link'
+          ];
+          
+          sheet.appendRow(headers);
+          
+          // Style headers: bold text and pastel background
+          const headerRange = sheet.getRange(1, 1, 1, headers.length);
+          headerRange.setFontWeight('bold');
+          headerRange.setBackground('#E5E5FA'); // Light pastel lavender color
+        }
+        
+        // Set the unique ID to 1 for the first entry, or continue with the next number
+        const lastRow = sheet.getLastRow();
+        const uniqueId = lastRow === 0 ? 1 : lastRow; // If no rows, set to 1; otherwise, just use the row number.
+      
+        // Extract data from the input object
+        const { description, date, amount, splitType, documents, members, payers } = data;
+        
+        // Format Contribution and Balance Split columns
+        const contributionSplit = members.map(member => {
+          const splitValue = splitType === 'percentage' ? `${member.split}%` : `$${member.split}`;
+          return `${member.name}: ${splitValue}`;
+        }).join('\n');
+        
+        const totalPaid = payers.reduce((sum, payer) => sum + payer.amount, 0);
+        const balanceSplit = members.map(member => {
+          const memberContribution = splitType === 'percentage' ? (member.split / 100) * amount : member.split;
+          const memberPaid = payers.find(payer => payer.name === member.name)?.amount || 0;
+          const balance = memberPaid - memberContribution;
+          return `${member.name}: ${balance >= 0 ? '+' : ''}$${balance.toFixed(2)}`;
+        }).join('\n');
+        
+        // Convert documents to a comma-separated list
+        const documentsList = documents.join(', ') || '';
+        
+        // Append data to the sheet
+        sheet.appendRow([uniqueId, description, date, amount, payers.map(p => `${p.name}: $${p.amount}`).join('\n'), contributionSplit, balanceSplit, documentsList]);
+        
+        // Create a folder structure and link the folder URL
+        const folderUrl = createFolderStructure(sheet.getParent(), uniqueId, documents);
+        
+        // Update the 'Documents' column with the folder URL
+        sheet.getRange(lastRow + 1, 8).setValue(folderUrl); // 8th column is 'Documents'
+      }
     </script>
   </body>
 </html>
-

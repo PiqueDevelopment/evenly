@@ -41,7 +41,7 @@ function addBillToSheet(data) {
   const uniqueId = lastRow === 0 ? 1 : lastRow; // If no rows, set to 1; otherwise, just use the row number.
 
   // Extract data from the input object
-  const { description, date, amount, payer, splitType, documents, members } = data;
+  const { description, date, amount, splitType, documents, members, payers } = data;
   
   // Format Contribution and Balance Split columns
   const contributionSplit = members.map(member => {
@@ -49,16 +49,19 @@ function addBillToSheet(data) {
     return `${member.name}: ${splitValue}`;
   }).join('\n');
   
+  const totalPaid = payers.reduce((sum, payer) => sum + payer.amount, 0);
   const balanceSplit = members.map(member => {
-    const balance = calculateBalanceSplit(member.split, amount, splitType, member.name === payer);
-    return `${member.name}: ${balance}`;
+    const memberContribution = splitType === 'percentage' ? (member.split / 100) * amount : member.split;
+    const memberPaid = payers.find(payer => payer.name === member.name)?.amount || 0;
+    const balance = memberContribution - memberPaid;
+    return `${member.name}: ${balance >= 0 ? '-' : '+'}$${Math.abs(balance).toFixed(2)}`;
   }).join('\n');
   
   // Convert documents to a comma-separated list
   const documentsList = documents.join(', ') || '';
   
   // Append data to the sheet
-  sheet.appendRow([uniqueId, description, date, amount, payer, contributionSplit, balanceSplit, documentsList]);
+  sheet.appendRow([uniqueId, description, date, amount, payers.map(p => `${p.name}: $${p.amount}`).join('\n'), contributionSplit, balanceSplit, documentsList]);
   
   // Create a folder structure and link the folder URL
   const folderUrl = createFolderStructure(sheet.getParent(), uniqueId, documents);
@@ -113,4 +116,3 @@ function getOrCreateFolderInFolder(parentFolder, folderName) {
     return newFolder;
   }
 }
-
