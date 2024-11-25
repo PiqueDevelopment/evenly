@@ -32,7 +32,7 @@ function addBillToSheet(data) {
   }
 
   const lastRow = sheet.getLastRow();
-  const uniqueId = lastRow === 0 ? 1 : lastRow + 1;
+  const uniqueId = lastRow === 0 ? 1 : lastRow;
 
   const { description, date, totalAmount, splitType, members, payers } = data;
 
