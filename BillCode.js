@@ -5,114 +5,229 @@ function onOpen() {
     .addToUi();
 }
 
+function getPeople() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('People');
+  if (!sheet) return [];
+
+  const data = sheet.getDataRange().getValues();
+  return data.slice(1).map(row => ({ name: row[0], email: row[1] }));
+}
+
 function enterBillDetails() {
-  const html = HtmlService.createHtmlOutputFromFile('BillForm')
-    .setWidth(400)
-    .setHeight(600);
-  SpreadsheetApp.getUi().showModalDialog(html, 'Enter Bill Details');
+  const people = getPeople(); // Returns an array of objects: [{ name: "John Doe", email: "john@example.com" }, ...]
+  const html = HtmlService.createTemplateFromFile('BillForm');
+  html.people = JSON.stringify(people); // Properly encode as JSON string
+  SpreadsheetApp.getUi().showModalDialog(
+    html.evaluate().setWidth(400).setHeight(600),
+    'Enter Bill Details'
+  );
 }
 
 function addBillToSheet(data) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  
-  // Check if sheet is empty and add headers if needed
+
   if (sheet.getLastRow() === 0) {
-    const headers = [
-      'Unique ID', 
-      'Description', 
-      'Date', 
-      'Total Amount', 
-      'Who Paid', 
-      'Contribution Split', 
-      'Balance Split', 
-      'Entry Folder Link'
-    ];
-    
-    sheet.appendRow(headers);
-    
-    // Style headers: bold text and pastel background
-    const headerRange = sheet.getRange(1, 1, 1, headers.length);
-    headerRange.setFontWeight('bold');
-    headerRange.setBackground('#E5E5FA'); // Light pastel lavender color
+    // Add headers if the sheet is empty
+    sheet.appendRow(['Unique ID', 'Description', 'Date', 'Total Amount', 'Who Paid', 'Contribution Split', 'Balance Split', 'Folder Link']);
   }
-  
-  // Set the unique ID to 1 for the first entry, or continue with the next number
+
   const lastRow = sheet.getLastRow();
-  const uniqueId = lastRow === 0 ? 1 : lastRow; // If no rows, set to 1; otherwise, just use the row number.
+  const uniqueId = lastRow === 0 ? 1 : lastRow;
 
-  // Extract data from the input object
-  const { description, date, amount, splitType, documents, members, payers } = data;
-  
-  // Format Contribution and Balance Split columns
-  const contributionSplit = members.map(member => {
-    const splitValue = splitType === 'percentage' ? `${member.split}%` : `$${member.split}`;
-    return `${member.name}: ${splitValue}`;
-  }).join('\n');
-  
-  const totalPaid = payers.reduce((sum, payer) => sum + payer.amount, 0);
-  const balanceSplit = members.map(member => {
-    const memberContribution = splitType === 'percentage' ? (member.split / 100) * amount : member.split;
-    const memberPaid = payers.find(payer => payer.name === member.name)?.amount || 0;
-    const balance = memberContribution - memberPaid;
-    return `${member.name}: ${balance >= 0 ? '-' : '+'}$${Math.abs(balance).toFixed(2)}`;
-  }).join('\n');
-  
-  // Convert documents to a comma-separated list
-  const documentsList = documents.join(', ') || '';
-  
-  // Append data to the sheet
-  sheet.appendRow([uniqueId, description, date, amount, payers.map(p => `${p.name}: $${p.amount}`).join('\n'), contributionSplit, balanceSplit, documentsList]);
-  
-  // Create a folder structure and link the folder URL
-  const folderUrl = createFolderStructure(sheet.getParent(), uniqueId, documents);
-  
-  // Update the 'Documents' column with the folder URL
-  sheet.getRange(lastRow + 1, 8).setValue(folderUrl); // 8th column is 'Documents'
+  const { description, date, totalAmount, splitType, members, payers } = data;
+
+  // Format the contribution split
+  const contributionSplit = members
+    .map(member => {
+      if (splitType === 'percentage') {
+        return `${member.name}: ${member.split}%`;
+      } else {
+        return `${member.name}: $${member.split}`;
+      }
+    })
+    .join('\n');
+
+  // Calculate the balance split
+  const balanceMap = new Map();
+
+  // Initialize balance map with members' contributions
+  members.forEach(member => {
+    let contribution = member.split;
+    if (splitType === 'percentage') {
+      contribution = (totalAmount * member.split) / 100;
+    }
+    balanceMap.set(member.name, -contribution);
+  });
+
+  // Adjust balance map with payers' payments
+  payers.forEach(payer => {
+    const currentBalance = balanceMap.get(payer.name) || 0;
+    balanceMap.set(payer.name, currentBalance + payer.payerAmount);
+  });
+
+  // Format the balance split
+  const balanceSplit = Array.from(balanceMap.entries())
+    .map(([name, balance]) => {
+      const formattedBalance = balance >= 0 ? `+$${balance.toFixed(2)}` : `-$${Math.abs(balance).toFixed(2)}`;
+      return `${name}: ${formattedBalance}`;
+    })
+    .join('\n');
+
+  const folderUrl = createFolderStructure(sheet.getParent(), uniqueId);
+
+  sheet.appendRow([
+    uniqueId,
+    description,
+    date,
+    totalAmount,
+    payers.map(p => `${p.name}: $${p.payerAmount}`).join('\n'),
+    contributionSplit,
+    balanceSplit,
+    folderUrl,
+  ]);
 }
 
-function calculateBalanceSplit(split, totalAmount, splitType, isPayer) {
-  const amount = splitType === 'percentage' ? (split / 100) * totalAmount : parseFloat(split);
-  return isPayer ? `+$${(totalAmount - amount).toFixed(2)}` : `-$${amount.toFixed(2)}`;
+function updateSplit() {
+  const splitType = document.querySelector('[name="splitType"]').value;
+  const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+  
+  if (!totalAmount) return;  // Exit if total amount is not set
+
+  const members = document.querySelectorAll('.member');
+  const payers = document.querySelectorAll('.payer');
+
+  if (splitType === 'percentage') {
+    let totalPercentagePaid = 0;
+
+    // Sum up the percentages of the payers
+    payers.forEach(payer => {
+      totalPercentagePaid += parseFloat(payer.querySelector('input').value) || 0;
+    });
+
+    // Distribute the remaining percentage among members
+    members.forEach(member => {
+      const currentSplit = parseFloat(member.querySelector('input').value) || 0;
+      if (!currentSplit) {
+        member.querySelector('input').value = ((100 - totalPercentagePaid) / members.length).toFixed(2);
+      }
+    });
+  } else if (splitType === 'amount') {
+    let totalAmountPaid = 0;
+
+    // Sum up the amounts paid by the payers
+    payers.forEach(payer => {
+      totalAmountPaid += parseFloat(payer.querySelector('input').value) || 0;
+    });
+
+    // Distribute the remaining amount among members
+    members.forEach(member => {
+      const currentSplit = parseFloat(member.querySelector('input').value) || 0;
+      if (!currentSplit) {
+        member.querySelector('input').value = ((totalAmount - totalAmountPaid) / members.length).toFixed(2);
+      }
+    });
+  }
 }
 
-function createFolderStructure(parentFolder, uniqueId, documents) {
-  // Create a root folder based on the spreadsheet's name
+
+function addMember() {
+  const membersDiv = document.getElementById('members');
+  const memberDiv = document.createElement('div');
+  memberDiv.className = 'member';
+  memberDiv.appendChild(createDropdown(people, 'member-dropdown'));
+  memberDiv.innerHTML += `<input type="number" step="0.01" placeholder="Split" oninput="updateSplit()">`;
+
+  // Automatically fill the "Split" field based on split type and total amount
+  const splitType = document.querySelector('[name="splitType"]').value;
+  const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+
+  if (splitType && totalAmount) {
+    if (splitType === 'percentage') {
+      const members = document.querySelectorAll('.member');
+      const totalPercentage = Array.from(members).reduce((total, member) => {
+        const splitValue = parseFloat(member.querySelector('input').value) || 0;
+        return total + splitValue;
+      }, 0);
+      
+      // Default to an equal split for each new member if there's space
+      const remainingPercentage = 100 - totalPercentage;
+      const remainingMembers = members.length;
+      const equalSplit = (remainingPercentage / remainingMembers).toFixed(2);
+      memberDiv.querySelector('input').value = equalSplit;
+    } else if (splitType === 'amount') {
+      const totalAmountPaid = Array.from(document.querySelectorAll('.payer input'))
+        .reduce((total, input) => total + parseFloat(input.value) || 0, 0);
+      
+      const remainingAmount = totalAmount - totalAmountPaid;
+      const remainingMembers = document.querySelectorAll('.member').length;
+      const equalAmount = (remainingAmount / remainingMembers).toFixed(2);
+      memberDiv.querySelector('input').value = equalAmount;
+    }
+  }
+
+  membersDiv.appendChild(memberDiv);
+  updateSplit();  // Recalculate the splits after adding a member
+}
+
+function addMember() {
+  const membersDiv = document.getElementById('members');
+  const memberDiv = document.createElement('div');
+  memberDiv.className = 'member';
+  memberDiv.appendChild(createDropdown(people, 'member-dropdown'));
+  memberDiv.innerHTML += `<input type="number" step="0.01" placeholder="Split" oninput="updateSplit()">`;
+  membersDiv.appendChild(memberDiv);
+
+  // Automatically calculate the split when a new member is added
+  updateSplit();  // Call this after adding a member to ensure the splits are updated
+}
+
+
+
+
+function submitForm() {
+  // Ensure split calculations are up-to-date before submission
+  updateSplit();
+
+  const formData = {
+    description: document.querySelector('[name="description"]').value,
+    date: document.querySelector('[name="date"]').value,
+    amount: parseFloat(document.querySelector('[name="amount"]').value),
+    splitType: document.querySelector('[name="splitType"]').value,
+    payers: [...document.querySelectorAll('.payer')].map(payer => ({
+      name: payer.querySelector('.payer-dropdown').value,
+      amount: parseFloat(payer.querySelector('input').value),
+    })),
+    members: [...document.querySelectorAll('.member')].map(member => ({
+      name: member.querySelector('.member-dropdown').value,
+      split: parseFloat(member.querySelector('input').value),
+    })),
+  };
+  
+  // Call Google Apps Script function to process the form
+  google.script.run.addBillToSheet(formData);
+  
+  // Close the dialog after submission
+  google.script.host.close();
+}
+
+
+function createFolderStructure(parentFolder, uniqueId) {
   const folderName = parentFolder.getName();
   let mainFolder = getOrCreateFolder(folderName);
 
-  // Get the sheet name to create a subfolder for each sheet
   const sheetName = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getName();
-
-  // Create a subfolder for the current sheet
   let sheetFolder = getOrCreateFolderInFolder(mainFolder, sheetName);
 
-  // Create a subfolder for the unique ID entry
   let entryFolder = getOrCreateFolderInFolder(sheetFolder, uniqueId.toString());
-
-  // Return the URL to the entry folder
   return entryFolder.getUrl();
 }
 
 function getOrCreateFolder(folderName) {
   const folders = DriveApp.getFoldersByName(folderName);
-  if (folders.hasNext()) {
-    return folders.next();
-  } else {
-    const newFolder = DriveApp.createFolder(folderName);
-    // Set permissions to allow anyone with the link to view
-    newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return newFolder;
-  }
+  return folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
 }
 
 function getOrCreateFolderInFolder(parentFolder, folderName) {
   const folders = parentFolder.getFoldersByName(folderName);
-  if (folders.hasNext()) {
-    return folders.next();
-  } else {
-    const newFolder = parentFolder.createFolder(folderName);
-    // Set permissions to allow anyone with the link to view
-    newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return newFolder;
-  }
+  return folders.hasNext() ? folders.next() : parentFolder.createFolder(folderName);
 }
