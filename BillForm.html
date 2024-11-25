@@ -1,456 +1,257 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <base target="_top">
-<style>
-  body {
-    font-family: 'Roboto', sans-serif; /* Professional font */
-    background-color: #f9f9f9; /* Subtle background for better contrast */
-    color: #333; /* Dark gray for text */
-    font-weight: 500; /* Consistent font weight */
-  }
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+    }
 
-  form {
-    font-size: 14px; /* Slightly larger font for better readability */
-    color: #444; /* Softer gray for form text */
-    font-weight: 500; /* Ensure font weight consistency */
-  }
+    form {
+      font-size: 14px;
+      color: #444;
+    }
 
-  label {
-    color: #222; /* Darker gray for labels */
-    font-weight: 500; /* Consistent font weight */
-  }
+    label {
+      color: #222;
+    }
 
-  input:focus, select:focus, textarea:focus {
-    border-color: #3b82f6; /* Highlight border on focus */
-    box-shadow: 0 0 4px rgba(59, 130, 246, 0.5); /* Subtle glow effect */
-    outline: none; /* Remove default outline */
-  }
+    input:focus, select:focus, textarea:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 4px rgba(59, 130, 246, 0.5);
+      outline: none;
+    }
 
-  textarea {
-    resize: vertical; /* Allow vertical resizing but not horizontal */
-    height: 80px; /* Default height for better usability */
-    font-weight: 500; /* Consistent font weight */
-  }
+    button[type="button"] {
+      padding: 7px 11px;
+      font-size: 12px;
+      color: #fff;
+      background-color: #3b82f6;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
 
-  select {
-    cursor: pointer;
-    background-color: #fff;
-    font-weight: 500; /* Consistent font weight */
-  }
+    button[type="button"]:hover {
+      background-color: #2563eb;
+    }
 
-  /* Style for smaller action buttons (Add Payer, Remove Payer, Add Member, Remove Member) */
-  button[type="button"] {
-    padding: 7px 11px; /* Smaller padding */
-    font-size: 12px; /* Smaller font size */
-    color: #fff;
-    background-color: #3b82f6;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    font-weight: 500;
-  }
+    button[type="submit"] {
+      padding: 14px 20px;
+      font-size: 14px;
+      color: #fff;
+      background-color: #1abc9c;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
 
-  /* Hover effect for smaller buttons */
-  button[type="button"]:hover {
-    background-color: #2563eb;
-  }
+    button[type="submit"]:hover {
+      background-color: #16a085;
+    }
 
-  button[type="button"]:not(:last-child) {
-    margin-right: 6px; /* Spacing between buttons */
-  }
+    form input, form select, form textarea {
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 4px 8px;
+      width: 100%;
+      box-sizing: border-box;
+      background-color: #fff;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
 
-  /* Style for the Submit button (slightly bigger than the action buttons) */
-button[type="submit"] {
-  padding: 14px 20px;
-  font-size: 14px;
-  color: #fff;
-  background-color: #1abc9c; /* Teal color */
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-weight: 500;
-}
+    /* Flex container for payers and members */
+    .payer, .member {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px; /* Space between each entry */
+    }
 
-/* Hover effect for the Submit button */
-button[type="submit"]:hover {
-  background-color: #16a085; /* Darker teal on hover */
-}
+    /* Style for each input field (dropdown + amount) */
+    .payer select, .member select {
+      margin-right: 10px; /* Space between dropdown and input */
+    }
 
-  /* Target only the Description, Date, Total Amount, and Split Type input fields */
-form input[name="description"], 
-form input[name="date"], 
-form input[name="amount"], 
-form select[name="splitType"],
-form textarea[name="description"] {
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
-  color: #333;
-  border: 1px solid #ccc; /* Light border for inputs */
-  border-radius: 4px; /* Rounded corners for inputs */
-  padding: 4px 8px; /* Reduced padding to shrink height */
-  width: 100%; /* Full-width for better alignment */
-  box-sizing: border-box; /* Consistent sizing across browsers */
-  background-color: #fff; /* Clean white background */
-  transition: border-color 0.3s, box-shadow 0.3s;
-  font-weight: 500; /* Consistent font weight */
-}
+    .payer input, .member input {
+      width: 100px; /* Limit width of input to make space between them */
+    }
 
-/* Target only the input, select, and textarea inside the Who Paid and Members sections */
-form #payers input, 
-form #members input, 
-form #payers select, 
-form #members select, 
-form #payers textarea, 
-form #members textarea {
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
-  color: #333;
-  border: 1px solid #ccc; /* Light border for inputs */
-  border-radius: 4px; /* Rounded corners for inputs */
-  padding: 4px 8px; /* Reduced padding to shrink height */
-  background-color: #fff; /* Clean white background */
-  transition: border-color 0.3s, box-shadow 0.3s;
-  font-weight: 500; /* Consistent font weight */
-}
+    /* Button styling */
+    .payer-buttons, .member-buttons {
+      margin-top: 10px;
+    }
+  </style>
+</head>
 
-  
-</style>
+<body>
+  <form id="billForm">
+    <label>Description:</label><br>
+    <textarea name="description" required></textarea><br><br>
 
-  </head>
-  <body>
-    <form id="billForm">
-      <label>Description:</label><br>
-      <textarea name="description" required></textarea><br><br>
+    <label>Date:</label><br>
+    <input type="date" name="date" required><br><br>
 
-      <label>Date:</label><br>
-      <input type="date" name="date" required><br><br>
+    <label>Total Amount:</label><br>
+    <input type="number" name="amount" step="0.01" required><br><br>
 
-      <label>Total Amount:</label><br>
-      <input type="number" name="amount" step="0.01" required><br><br>
+    <label>Split Type:</label><br>
+    <select name="splitType" onchange="resetMemberSplits()">
+      <option value="percentage">Percentage</option>
+      <option value="amount">Dollar Amount</option>
+    </select><br><br>
 
-      <label>Split Type:</label><br>
-      <select name="splitType" onchange="resetMemberSplits()">
-        <option value="percentage">Percentage</option>
-        <option value="amount">Dollar Amount</option>
-      </select><br><br>
-      
-      <div>
-        <label>Who Paid:</label><br>
-        <div id="payers"></div>
+    <div>
+      <label>Who Paid:</label><br>
+      <div id="payers"></div>
+      <div class="payer-buttons">
         <button type="button" onclick="addPayer()">Add Payer</button>
-        <button type="button" onclick="removePayer()">Remove Payer</button><br><br>
-      </div>
+        <button type="button" onclick="removePayer()">Remove Payer</button>
+      </div><br><br>
+    </div>
 
-      <div>
-        <label>Members (Name and Split):</label><br>
-        <div id="members"></div>
+    <div>
+      <label>Members (Name and Split):</label><br>
+      <div id="members"></div>
+      <div class="member-buttons">
         <button type="button" onclick="addMember()">Add Member</button>
-        <button type="button" onclick="removeMember()">Remove Member</button><br><br>
-      </div>
+        <button type="button" onclick="removeMember()">Remove Member</button>
+      </div><br><br>
+    </div>
 
-      <button type="button" onclick="submitForm()">Submit</button>
-    </form>
+    <button type="submit" onclick="submitForm()">Submit</button>
+  </form>
 
-    <script>
-      let totalAmount = 0; // Store the total amount from the form
-      let splitType = 'percentage'; // Default split type
-      let documents = []; // Store document links
+  <script>
+    const people = JSON.parse('<?= people ?>');
 
-      // Update the total amount when it changes
-      document.querySelector('[name="amount"]').addEventListener('input', function() {
-        totalAmount = parseFloat(this.value);
-        calculateRemainingSplit();
-      });
+    console.log('People array:', people); // Verify the structure in the console
 
-      // Update the split type when it changes
-      document.querySelector('[name="splitType"]').addEventListener('change', function() {
-        splitType = this.value;
-        resetMemberSplits();
-      });
-
-      // Add a new member field for input
-      function addMember() {
-        const membersDiv = document.getElementById("members");
-        const member = document.createElement("div");
-        member.className = "member";
-        member.innerHTML = ` 
-          <input type="text" name="memberName" placeholder="Name" required> 
-          <input type="number" name="memberSplit" placeholder="Split" required onchange="updateSplit()"><br><br>
-        `;
-        membersDiv.appendChild(member);
-        calculateRemainingSplit();
+    function createDropdown(options, className) {
+      if (!Array.isArray(options)) {
+        console.error("Expected an array, but got:", options); // Additional debugging
+        return document.createElement('select'); // Return an empty select element to avoid crashes
       }
 
-      // Remove the last member field
-      function removeMember() {
-        const membersDiv = document.getElementById("members");
-        if (membersDiv.lastChild) {
-          membersDiv.removeChild(membersDiv.lastChild);
-        }
+      const select = document.createElement('select');
+      select.className = className;
+      select.innerHTML = options
+        .map(person => `<option value="${person.name}">${person.name} (${person.email})</option>`)
+        .join('');
+      return select;
+    }
+
+    function addPayer() {
+      const payersDiv = document.getElementById('payers');
+      const payerDiv = document.createElement('div');
+      payerDiv.className = 'payer';
+      payerDiv.appendChild(createDropdown(people, 'payer-dropdown'));
+      payerDiv.innerHTML += `<input type="number" step="0.01" placeholder="Payer Amount">`;
+      payersDiv.appendChild(payerDiv);
+    }
+
+    function removePayer() {
+      const payersDiv = document.getElementById('payers');
+      if (payersDiv.lastChild) {
+        payersDiv.removeChild(payersDiv.lastChild);
       }
+    }
 
-      // Add a new payer field for input
-      function addPayer() {
-        const payersDiv = document.getElementById("payers");
-        const payer = document.createElement("div");
-        payer.className = "payer";
-        payer.innerHTML = ` 
-          <input type="text" name="payerName" placeholder="Name" required> 
-          <input type="number" name="payerAmount" placeholder="Amount" required><br><br>
-        `;
-        payersDiv.appendChild(payer);
-      }
+    function addMember() {
+      const membersDiv = document.getElementById('members');
+      const memberDiv = document.createElement('div');
+      memberDiv.className = 'member';
+      memberDiv.appendChild(createDropdown(people, 'member-dropdown'));
+      memberDiv.innerHTML += `<input type="number" step="0.01" placeholder="Split">`;
+      membersDiv.appendChild(memberDiv);
 
-      // Remove the last payer field
-      function removePayer() {
-        const payersDiv = document.getElementById("payers");
-        if (payersDiv.lastChild) {
-          payersDiv.removeChild(payersDiv.lastChild);
-        }
-      }
-
-      // Recalculate the remaining split (either amount or percentage)
-      function calculateRemainingSplit() {
-        const splits = document.querySelectorAll('input[name="memberSplit"]');
-        const totalInputs = splits.length;
-        if (splitType === 'percentage') {
-          let totalSplit = 0;
-          splits.forEach((input, index) => {
-            if (index === totalInputs - 1) {
-              input.value = (100 - totalSplit).toFixed(2); // Ensure last member gets remainder
-            }
-            totalSplit += parseFloat(input.value) || 0;
-          });
-        } else if (splitType === 'amount') {
-          let totalAmountSplit = 0;
-          splits.forEach((input, index) => {
-            if (index === totalInputs - 1) {
-              input.value = (totalAmount - totalAmountSplit).toFixed(2); // Ensure last member gets remainder
-            }
-            totalAmountSplit += parseFloat(input.value) || 0;
-          });
-        }
-      }
-
-      // Function to update splits when one is modified
-      function updateSplit() {
-        const splits = document.querySelectorAll('input[name="memberSplit"]');
-        const totalInputs = splits.length;
-        if (splitType === 'percentage') {
-          let totalSplit = 0;
-          splits.forEach((input, index) => {
-            if (input.value === '') return; // Skip empty inputs
-            const currentSplit = parseFloat(input.value);
-            totalSplit += currentSplit;
-            // If totalSplit exceeds 100%, show an error
-            if (totalSplit > 100) {
-              input.setCustomValidity('The total percentage cannot exceed 100%');
-            } else {
-              input.setCustomValidity(''); 
-            }
-            // Set the last member split to ensure total equals 100%
-            if (index === totalInputs - 1) {
-              const remainingPercentage = 100 - totalSplit + currentSplit;
-              if (remainingPercentage >= 0) {
-                input.value = remainingPercentage.toFixed(2);
-              }
-            }
-          });
-        } else if (splitType === 'amount') {
-          let totalAmountSplit = 0;
-          splits.forEach((input, index) => {
-            if (input.value === '') return; // Skip empty inputs
-            const currentAmount = parseFloat(input.value);
-            totalAmountSplit += currentAmount;
-            // If totalAmountSplit exceeds totalAmount, show an error
-            if (totalAmountSplit > totalAmount) {
-              input.setCustomValidity('The total amount cannot exceed the total specified.');
-            } else {
-              input.setCustomValidity(''); 
-            }
-            // Set the last member split to ensure total matches the total amount
-            if (index === totalInputs - 1) {
-              const remainingAmount = totalAmount - totalAmountSplit + currentAmount;
-              if (remainingAmount >= 0) {
-                input.value = remainingAmount.toFixed(2);
-              }
-            }
-          });
-        }
-      }
-
-      // Reset all member splits when the split type changes
-      function resetMemberSplits() {
-        const splits = document.querySelectorAll('input[name="memberSplit"]');
-        splits.forEach(input => {
-          input.value = ''; // Reset all member splits
-        });
-        calculateRemainingSplit();
-      }
-
-      // Update the document list when files are uploaded
-      // Update the document list when files are uploaded
-function updateDocumentList() {
-    const fileInput = document.getElementById('fileUpload');
-    const files = Array.from(fileInput.files);
-    documents = files.map(file => file.name);
-    displayDocumentList();
-
-    // Convert files to base64 and upload to Google Drive
-    files.forEach(file => {
-        convertFileToBase64(file)
-            .then(base64Content => {
-                uploadFileToDrive(file.name, base64Content, file.type);
-            })
-            .catch(error => {
-                console.error('Error converting file:', error);
-            });
-    });
-}
-
-// Convert file to Base64 string
-function convertFileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            resolve(reader.result.split(',')[1]); // Remove data URL prefix
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-// Upload file to Google Drive and save to a specific folder
-function uploadFileToDrive(fileName, base64Content, mimeType) {
-    const folderId = 'your-folder-id'; // Replace with your target folder ID
-    const folderPath = 'entry-subfolder'; // The name of the subfolder where you want the file to go
-
-    // Call Apps Script function to upload the file
-    google.script.run
-        .withSuccessHandler(response => {
-            console.log('File uploaded successfully:', response);
-        })
-        .withFailureHandler(error => {
-            console.error('Error uploading file:', error);
-        })
-        .uploadFileToGoogleDrive({
-            name: fileName,
-            content: base64Content,
-            mimeType: mimeType
-        }, folderId, folderPath);
-}
-
-      // Display the list of uploaded documents
-      function displayDocumentList() {
-        const documentListDiv = document.getElementById('documentList');
-        documentListDiv.innerHTML = documents.map((doc, index) => `
-          <div>
-            ${doc} <button type="button" onclick="removeDocument(${index})">Remove</button>
-          </div>
-        `).join('');
-      }
-
-      // Remove a specific document from the list
-      function removeDocument(index) {
-        documents.splice(index, 1);
-        displayDocumentList();
-      }
-
-      // Submit the form data
-      function submitForm() {
-        const form = document.getElementById("billForm");
-        const formData = new FormData(form);
-
-        // Prepare data to send
-        const data = {
-          description: formData.get('description'),
-          date: formData.get('date'),
-          amount: parseFloat(formData.get('amount')),
-          splitType: formData.get('splitType'),
-          documents: documents,
-          members: [],
-          payers: []
-        };
-
-        formData.getAll('memberName').forEach((name, i) => {
-          data.members.push({
-            name: name,
-            split: parseFloat(formData.getAll('memberSplit')[i])
-          });
-        });
-
-        formData.getAll('payerName').forEach((name, i) => {
-          data.payers.push({
-            name: name,
-            amount: parseFloat(formData.getAll('payerAmount')[i])
-          });
-        });
-
-        // Call Apps Script to add bill data to the sheet
-        google.script.run.addBillToSheet(data);
-        google.script.host.close();
-      }
-
-      function addBillToSheet(data) {
-        const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-        
-        // Check if sheet is empty and add headers if needed
-        if (sheet.getLastRow() === 0) {
-          const headers = [
-            'Unique ID', 
-            'Description', 
-            'Date', 
-            'Total Amount', 
-            'Who Paid', 
-            'Contribution Split', 
-            'Balance Split', 
-            'Entry Folder Link'
-          ];
-          
-          sheet.appendRow(headers);
-          
-          // Style headers: bold text and pastel background
-          const headerRange = sheet.getRange(1, 1, 1, headers.length);
-          headerRange.setFontWeight('bold');
-          headerRange.setBackground('#E5E5FA'); // Light pastel lavender color
-        }
-        
-        // Set the unique ID to 1 for the first entry, or continue with the next number
-        const lastRow = sheet.getLastRow();
-        const uniqueId = lastRow === 0 ? 1 : lastRow; // If no rows, set to 1; otherwise, just use the row number.
+      // Automatically calculate the split when a new member is added
+      const splitType = document.querySelector('[name="splitType"]').value;
       
-        // Extract data from the input object
-        const { description, date, amount, splitType, documents, members, payers } = data;
-        
-        // Format Contribution and Balance Split columns
-        const contributionSplit = members.map(member => {
-          const splitValue = splitType === 'percentage' ? `${member.split}%` : `$${member.split}`;
-          return `${member.name}: ${splitValue}`;
-        }).join('\n');
-        
-        const totalPaid = payers.reduce((sum, payer) => sum + payer.amount, 0);
-        const balanceSplit = members.map(member => {
-          const memberContribution = splitType === 'percentage' ? (member.split / 100) * amount : member.split;
-          const memberPaid = payers.find(payer => payer.name === member.name)?.amount || 0;
-          const balance = memberPaid - memberContribution;
-          return `${member.name}: ${balance >= 0 ? '+' : ''}$${balance.toFixed(2)}`;
-        }).join('\n');
-        
-        // Convert documents to a comma-separated list
-        const documentsList = documents.join(', ') || '';
-        
-        // Append data to the sheet
-        sheet.appendRow([uniqueId, description, date, amount, payers.map(p => `${p.name}: $${p.amount}`).join('\n'), contributionSplit, balanceSplit, documentsList]);
-        
-        // Create a folder structure and link the folder URL
-        const folderUrl = createFolderStructure(sheet.getParent(), uniqueId, documents);
-        
-        // Update the 'Documents' column with the folder URL
-        sheet.getRange(lastRow + 1, 8).setValue(folderUrl); // 8th column is 'Documents'
+      if (splitType === 'percentage') {
+        const members = document.querySelectorAll('.member');
+        let totalPercentage = 0;
+
+        // Calculate the total percentage already assigned
+        members.forEach(member => {
+          const currentSplit = parseFloat(member.querySelector('input').value) || 0;
+          totalPercentage += currentSplit;
+        });
+
+        // Calculate the remaining percentage to be assigned to the new member
+        const remainingPercentage = 100 - totalPercentage;
+
+        // Assign the remaining percentage to the last member if it doesn't have a split value
+        const lastMember = members[members.length - 1];
+        const lastMemberSplit = parseFloat(lastMember.querySelector('input').value) || 0;
+        if (!lastMemberSplit) {
+          lastMember.querySelector('input').value = remainingPercentage.toFixed(2);
+        }
+      } else if (splitType === 'amount') {
+        const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+        const members = document.querySelectorAll('.member');
+        let totalSplitAmount = 0;
+
+        // Calculate the total dollar amount already assigned
+        members.forEach(member => {
+          const currentSplit = parseFloat(member.querySelector('input').value) || 0;
+          totalSplitAmount += currentSplit;
+        });
+
+        // Calculate the remaining dollar amount to be assigned to the new member
+        const remainingDollarAmount = totalAmount - totalSplitAmount;
+
+        // Assign the remaining dollar amount to the last member if it doesn't have a split value
+        const lastMember = members[members.length - 1];
+        const lastMemberSplit = parseFloat(lastMember.querySelector('input').value) || 0;
+        if (!lastMemberSplit) {
+          lastMember.querySelector('input').value = remainingDollarAmount.toFixed(2);
+        }
       }
-    </script>
-  </body>
+    }
+
+    function removeMember() {
+      const membersDiv = document.getElementById('members');
+      if (membersDiv.lastChild) {
+        membersDiv.removeChild(membersDiv.lastChild);
+      }
+    }
+
+    function submitForm() {
+      const formData = {
+        description: document.querySelector('[name="description"]').value,
+        date: document.querySelector('[name="date"]').value,
+        totalAmount: parseFloat(document.querySelector('[name="amount"]').value),
+        splitType: document.querySelector('[name="splitType"]').value,
+        payers: [...document.querySelectorAll('.payer')].map(payer => ({
+          name: payer.querySelector('.payer-dropdown').value,
+          payerAmount: parseFloat(payer.querySelector('input').value),
+        })),
+        members: [...document.querySelectorAll('.member')].map(member => ({
+          name: member.querySelector('.member-dropdown').value,
+          split: parseFloat(member.querySelector('input').value),
+        })),
+      };
+      
+      // Call Google Apps Script function to process the form
+      google.script.run.addBillToSheet(formData);
+      
+      // Close the dialog after submission
+      google.script.host.close();
+    }
+
+    function resetMemberSplits() {
+      const members = document.querySelectorAll('.member input');
+      members.forEach(member => {
+        member.value = '';
+      });
+    }
+  </script>
+</body>
 </html>
