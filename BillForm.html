@@ -67,20 +67,23 @@
       transition: border-color 0.3s, box-shadow 0.3s;
     }
 
+    /* Flex container for payers and members */
     .payer, .member {
       display: flex;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 10px; /* Space between each entry */
     }
 
+    /* Style for each input field (dropdown + amount) */
     .payer select, .member select {
-      margin-right: 10px;
+      margin-right: 10px; /* Space between dropdown and input */
     }
 
     .payer input, .member input {
-      width: 100px;
+      width: 100px; /* Limit width of input to make space between them */
     }
 
+    /* Button styling */
     .payer-buttons, .member-buttons {
       margin-top: 10px;
     }
@@ -89,17 +92,17 @@
 
 <body>
   <form id="billForm">
-    <label>Description (Optional):</label><br>
-    <textarea name="description"></textarea><br><br>
+    <label>Description:</label><br>
+    <textarea name="description" required></textarea><br><br>
 
-    <label>Date (Optional):</label><br>
-    <input type="date" name="date"><br><br>
+    <label>Date:</label><br>
+    <input type="date" name="date" required><br><br>
 
-    <label>Total Amount (Optional):</label><br>
-    <input type="number" name="amount" step="0.01"><br><br>
+    <label>Total Amount:</label><br>
+    <input type="number" name="amount" step="0.01" required><br><br>
 
     <label>Split Type:</label><br>
-    <select name="splitType" onchange="resetSplits()">
+    <select name="splitType" onchange="resetMemberSplits()">
       <option value="percentage">Percentage</option>
       <option value="amount">Dollar Amount</option>
     </select><br><br>
@@ -122,13 +125,20 @@
       </div><br><br>
     </div>
 
-    <button type="submit">Submit</button>
+    <button type="submit" onclick="submitForm()">Submit</button>
   </form>
 
   <script>
     const people = JSON.parse('<?= people ?>');
 
+    console.log('People array:', people); // Verify the structure in the console
+
     function createDropdown(options, className) {
+      if (!Array.isArray(options)) {
+        console.error("Expected an array, but got:", options); // Additional debugging
+        return document.createElement('select'); // Return an empty select element to avoid crashes
+      }
+
       const select = document.createElement('select');
       select.className = className;
       select.innerHTML = options
@@ -153,103 +163,57 @@
       }
     }
 
-    function resetSplits() {
-      const splitType = document.querySelector('[name="splitType"]').value;
-      const members = Array.from(document.querySelectorAll('.member'));
-
-      members.forEach(member => {
-        const input = member.querySelector('input');
-        input.value = 0;
-      });
-
-      if (splitType === 'percentage') {
-        if (members.length > 0) {
-          const firstMemberInput = members[0].querySelector('input');
-          firstMemberInput.value = 100;
-        }
-      } else if (splitType === 'amount') {
-        const totalAmount = parseFloat(document.querySelector('[name="amount"]').value) || 0;
-        if (members.length > 0) {
-          const firstMemberInput = members[0].querySelector('input');
-          firstMemberInput.value = totalAmount;
-        }
-      }
-    }
-
     function addMember() {
       const membersDiv = document.getElementById('members');
       const memberDiv = document.createElement('div');
       memberDiv.className = 'member';
       memberDiv.appendChild(createDropdown(people, 'member-dropdown'));
-
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.step = '0.01';
-      input.placeholder = 'Split';
-
-      input.addEventListener('input', () => {
-        const members = Array.from(document.querySelectorAll('.member'));
-        const changedIndex = members.indexOf(memberDiv);
-        updateSplits(changedIndex);
-      });
-
-      memberDiv.appendChild(input);
+      memberDiv.innerHTML += `<input type="number" step="0.01" placeholder="Split">`;
       membersDiv.appendChild(memberDiv);
 
-      resetSplits();
-    }
-
-    function updateSplits(changedIndex) {
+      // Automatically calculate the split when a new member is added
       const splitType = document.querySelector('[name="splitType"]').value;
-      const members = Array.from(document.querySelectorAll('.member'));
-      const totalMembers = members.length;
-
-      if (totalMembers < 2) return;
-
-      const totalValue = splitType === 'percentage' ? 100 : parseFloat(document.querySelector('[name="amount"]').value);
-
-      let totalAssigned = 0;
-      members.forEach((member, index) => {
-        if (index === totalMembers - 1) return;
-        const input = member.querySelector('input');
-        const value = parseFloat(input.value) || 0;
-        totalAssigned += value;
-      });
-
-      const remainingValue = Math.max(0, totalValue - totalAssigned);
-      const lastMemberInput = members[totalMembers - 1].querySelector('input');
-
+      
       if (splitType === 'percentage') {
-        if (totalAssigned + remainingValue > 100) {
-          alert('Error: The total percentage cannot exceed 100%. Please adjust the values.');
-          lastMemberInput.setCustomValidity('Total percentage cannot exceed 100%');
-        } else {
-          lastMemberInput.setCustomValidity('');
+        const members = document.querySelectorAll('.member');
+        let totalPercentage = 0;
+
+        // Calculate the total percentage already assigned
+        members.forEach(member => {
+          const currentSplit = parseFloat(member.querySelector('input').value) || 0;
+          totalPercentage += currentSplit;
+        });
+
+        // Calculate the remaining percentage to be assigned to the new member
+        const remainingPercentage = 100 - totalPercentage;
+
+        // Assign the remaining percentage to the last member if it doesn't have a split value
+        const lastMember = members[members.length - 1];
+        const lastMemberSplit = parseFloat(lastMember.querySelector('input').value) || 0;
+        if (!lastMemberSplit) {
+          lastMember.querySelector('input').value = remainingPercentage.toFixed(2);
         }
       } else if (splitType === 'amount') {
-        if (totalAssigned + remainingValue > totalValue) {
-          alert(`Error: The total amount cannot exceed ${totalValue}. Please adjust the values.`);
-          lastMemberInput.setCustomValidity(`Total amount cannot exceed ${totalValue}`);
-        } else {
-          lastMemberInput.setCustomValidity('');
+        const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+        const members = document.querySelectorAll('.member');
+        let totalSplitAmount = 0;
+
+        // Calculate the total dollar amount already assigned
+        members.forEach(member => {
+          const currentSplit = parseFloat(member.querySelector('input').value) || 0;
+          totalSplitAmount += currentSplit;
+        });
+
+        // Calculate the remaining dollar amount to be assigned to the new member
+        const remainingDollarAmount = totalAmount - totalSplitAmount;
+
+        // Assign the remaining dollar amount to the last member if it doesn't have a split value
+        const lastMember = members[members.length - 1];
+        const lastMemberSplit = parseFloat(lastMember.querySelector('input').value) || 0;
+        if (!lastMemberSplit) {
+          lastMember.querySelector('input').value = remainingDollarAmount.toFixed(2);
         }
       }
-
-      if (changedIndex !== totalMembers - 1) {
-        lastMemberInput.value = remainingValue.toFixed(2);
-      }
-
-      members.forEach((member, index) => {
-        const input = member.querySelector('input');
-        const value = parseFloat(input.value) || 0;
-        if (splitType === 'percentage' && value > 100) {
-          input.setCustomValidity('Percentage cannot exceed 100');
-        } else if (splitType === 'amount' && value > totalValue) {
-          input.setCustomValidity(`Amount cannot exceed ${totalValue}`);
-        } else {
-          input.setCustomValidity('');
-        }
-      });
     }
 
     function removeMember() {
@@ -257,7 +221,6 @@
       if (membersDiv.lastChild) {
         membersDiv.removeChild(membersDiv.lastChild);
       }
-      resetSplits();
     }
 
     function submitForm() {
@@ -283,12 +246,12 @@
       google.script.host.close();
     }
 
-    const form = document.getElementById('billForm');
-    form.addEventListener('submit', function(event) {
-      event.preventDefault();
-      submitForm();
-    });
-
+    function resetMemberSplits() {
+      const members = document.querySelectorAll('.member input');
+      members.forEach(member => {
+        member.value = '';
+      });
+    }
   </script>
 </body>
 </html>
