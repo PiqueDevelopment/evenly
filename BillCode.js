@@ -29,6 +29,24 @@ function addBillToSheet(data) {
   if (sheet.getLastRow() === 0) {
     // Add headers if the sheet is empty
     sheet.appendRow(['Unique ID', 'Description', 'Date', 'Total Amount', 'Who Paid', 'Contribution Split', 'Balance Split', 'Folder Link']);
+    
+    // Get the range of the header row
+    var headerRange = sheet.getRange(1, 1, 1, 8); // 1 row, 8 columns
+    
+    // Set the font weight to bold
+    headerRange.setFontWeight('bold');
+    
+    // Set the background color
+    headerRange.setBackground('#f0f0f0');
+    
+    // Set the font color
+    headerRange.setFontColor('#333333');
+    
+    // Set the horizontal alignment to center
+    headerRange.setHorizontalAlignment('center');
+    
+    // Freeze the header row
+    sheet.setFrozenRows(1);
   }
 
   const lastRow = sheet.getLastRow();
