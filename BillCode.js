@@ -23,6 +23,22 @@ function enterBillDetails() {
   );
 }
 
+function updateTotalAmount() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  
+  // Get the values from column D (Total Amount), excluding the header row
+  const totalAmountColumn = sheet.getRange('D2:D' + sheet.getLastRow()).getValues();
+  
+  // Calculate the sum of all values in column D
+  const totalSum = totalAmountColumn.reduce((sum, row) => sum + (parseFloat(row[0]) || 0), 0);
+  
+  // Set the total sum to cell A1 (top left box)
+  sheet.getRange('D1').setValue('Total Amount: $' + totalSum.toFixed(2));
+  
+  // Auto-resize columns D and F based on row 1 content
+  autoResizeColumnsDAndF(sheet);
+}
+
 function addBillToSheet(data) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
@@ -103,7 +119,23 @@ function addBillToSheet(data) {
     balanceSplit,
     folderUrl,
   ]);
+
+  updateTotalAmount();
+
+  // Auto-resize columns D and F based on row 1 content
+  autoResizeColumnsDAndF(sheet);
 }
+
+function autoResizeColumnsDAndF(sheet) {
+  // Resize column D (Total Amount) and column F (Contribution Split) with added padding
+  sheet.autoResizeColumn(4); // Column D (Total Amount)
+  sheet.autoResizeColumn(6); // Column F (Contribution Split)
+  
+  // Add extra space to the left and right of column D and F
+  sheet.setColumnWidth(4, sheet.getColumnWidth(4) + 30); // Add 30px extra space to column D
+  sheet.setColumnWidth(6, sheet.getColumnWidth(6) + 30); // Add 30px extra space to column F
+}
+
 
 function updateSplit() {
   const splitType = document.querySelector('[name="splitType"]').value;
@@ -198,8 +230,6 @@ function addMember() {
   // Automatically calculate the split when a new member is added
   updateSplit();  // Call this after adding a member to ensure the splits are updated
 }
-
-
 
 
 function submitForm() {
