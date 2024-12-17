@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    form {
+      font-size: 14px;
+      color: #444;
+    }
+
+    label {
+      color: #222;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 4px rgba(59, 130, 246, 0.5);
+      outline: none;
+    }
+
+    button[type="button"] {
+      padding: 7px 11px;
+      font-size: 12px;
+      color: #fff;
+      background-color: #3b82f6;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button[type="button"]:hover {
+      background-color: #2563eb;
+    }
+
+    button[type="submit"] {
+      padding: 14px 20px;
+      font-size: 14px;
+      color: #fff;
+      background-color: #1abc9c;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #16a085;
+    }
+
+    form input, form select, form textarea {
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 4px 8px;
+      width: 100%;
+      box-sizing: border-box;
+      background-color: #fff;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .payer, .member {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .payer input, .member input {
+      margin-right: 10px;
+    }
+
+    .payer input[type="number"], .member input[type="number"] {
+      width: 100px;
+    }
+
+    .payer-buttons, .member-buttons {
+      margin-top: 10px;
+    }
+
+    .select2-container .select2-dropdown {
+      overflow-x: hidden;
+    }
+
+    .select2-results__options {
+      overflow-x: hidden;
+    }
+  </style>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+
+<body>
+  <form id="billForm">
+    <label>Description (Optional):</label><br>
+    <textarea name="description" required></textarea><br><br>
+
+    <label>Date (Optional):</label><br>
+    <input type="date" name="date" required><br><br>
+
+    <label>Total Amount:</label><br>
+    <input type="number" name="amount" step="0.01" required><br><br>
+
+    <label>Split Type:</label><br>
+    <select name="splitType" id="splitType" onchange="resetMemberSplits()">
+      <option value="percentage">Percentage</option>
+      <option value="amount">Dollar Amount</option>
+    </select><br><br>
+
+    <div id="payers"></div>
+    <button type="button" id="addPayer">Add Payer</button>
+    <button type="button" id="removePayer">Remove Payer</button><br><br>
+
+    <div id="members"></div>
+    <button type="button" id="addMember">Add Member</button>
+    <button type="button" id="removeMember">Remove Member</button><br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+  <script>
+    const people = JSON.parse('<?= people ?>');
+    const formData = JSON.parse('<?= formData ?>');
+    const splitType = '<?= splitType ?>';
+
+    function createDropdown(options, className, selectedValue = '') {
+      const select = document.createElement('select');
+      select.className = className;
+      select.innerHTML = options
+        .map(person => `<option value="${person.name}" ${person.name === selectedValue ? 'selected' : ''}>${person.name} (${person.email})</option>`)
+        .join('');
+      return select;
+    }
+
+    function addPayer(name = '', amount = '') {
+      const payersDiv = document.getElementById('payers');
+      const payerDiv = document.createElement('div');
+      payerDiv.className = 'payer';
+      payerDiv.appendChild(createDropdown(people, 'payer-dropdown', name));
+      payerDiv.innerHTML += `<input type="number" step="0.01" placeholder="Payer Amount" value="${amount}">`;
+      payersDiv.appendChild(payerDiv);
+      $(payerDiv).find('select').select2(); // Initialize Select2 on the new select element
+    }
+
+    function removePayer() {
+      const payersDiv = document.getElementById('payers');
+      if (payersDiv.lastChild) {
+        payersDiv.removeChild(payersDiv.lastChild);
+      }
+    }
+
+    function addMember(name = '', split = '') {
+      const membersDiv = document.getElementById('members');
+      const memberDiv = document.createElement('div');
+      memberDiv.className = 'member';
+      memberDiv.appendChild(createDropdown(people, 'member-dropdown', name));
+      memberDiv.innerHTML += `<input type="number" step="0.01" placeholder="Split" value="${split}">`;
+      membersDiv.appendChild(memberDiv);
+      $(memberDiv).find('select').select2(); // Initialize Select2 on the new select element
+    }
+
+    function removeMember() {
+      const membersDiv = document.getElementById('members');
+      if (membersDiv.lastChild) {
+        membersDiv.removeChild(membersDiv.lastChild);
+      }
+    }
+
+    function submitForm(event) {
+      event.preventDefault(); // Prevent default form submission
+
+      const formData = {
+        uniqueId: JSON.parse('<?= formData ?>').uniqueId,
+        description: document.querySelector('[name="description"]').value,
+        date: document.querySelector('[name="date"]').value,
+        totalAmount: parseFloat(document.querySelector('[name="amount"]').value),
+        splitType: document.querySelector('[name="splitType"]').value,
+        payers: [...document.querySelectorAll('.payer')].map(payer => ({
+          name: $(payer).find('select').val(),
+          payerAmount: parseFloat(payer.querySelector('input[type="number"]').value),
+        })),
+        members: [...document.querySelectorAll('.member')].map(member => ({
+          name: $(member).find('select').val(),
+          split: parseFloat(member.querySelector('input[type="number"]').value),
+        })),
+      };
+
+      google.script.run
+        .withSuccessHandler(() => {
+          google.script.host.close();
+        })
+        .withFailureHandler(error => {
+          alert('An error occurred: ' + error.message);
+        })
+        .updateBillInSheet(formData);
+    }
+
+    function resetMemberSplits() {
+      const members = document.querySelectorAll('.member input[type="number"]');
+      members.forEach(member => {
+        member.value = '';
+      });
+    }
+
+    $(document).ready(function() {
+      $('#splitType').val(splitType).trigger('change'); // Set the value and trigger change event
+      $('#splitType').select2();
+
+      document.querySelector('[name="description"]').value = formData.description;
+
+      // Convert date from yyyy/mm/dd to yyyy-mm-dd
+      const dateParts = formData.date.split('-');
+      const formattedDate = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
+      document.querySelector('[name="date"]').value = formattedDate;
+
+      document.querySelector('[name="amount"]').value = formData.totalAmount;
+
+      const whoPaid = formData.whoPaid.split('\n');
+      whoPaid.forEach(payer => {
+        const [name, amount] = payer.split(': $');
+        addPayer(name.trim(), amount.trim());
+      });
+
+      const contributionSplit = formData.contributionSplit.split('\n');
+      contributionSplit.forEach(member => {
+        const [name, split] = member.split(splitType === 'amount' ? ': $' : ': ');
+        addMember(name.trim(), splitType === 'amount' ? split.trim() : parseFloat(split).toFixed(2));
+      });
+
+      document.getElementById('addPayer').addEventListener('click', () => addPayer());
+      document.getElementById('addMember').addEventListener('click', () => addMember());
+
+      // Attach submit event to the form
+      const billForm = document.getElementById('billForm');
+      if (billForm) {
+        billForm.addEventListener('submit', submitForm);
+      } else {
+        console.error('billForm element not found');
+      }
+    });
+  </script>
+</body>
+</html>
