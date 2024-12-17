@@ -103,10 +103,10 @@
 
 <body>
   <form id="billForm">
-    <label>Description (Optional):</label><br>
+    <label>Description:</label><br>
     <textarea name="description" required></textarea><br><br>
 
-    <label>Date (Optional):</label><br>
+    <label>Date:</label><br>
     <input type="date" name="date" required><br><br>
 
     <label>Total Amount:</label><br>
@@ -119,7 +119,7 @@
     </select><br><br>
 
     <div>
-      <label>Who Paid (Optional):</label><br>
+      <label>Who Paid:</label><br>
       <div id="payers"></div>
       <div class="payer-buttons">
         <button type="button" onclick="addPayer()">Add Payer</button>
@@ -146,85 +146,164 @@
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
   <script>
-    const people = JSON.parse('<?= people ?>');
+  const people = JSON.parse('<?= people ?>');
 
-    function createDropdown(options, className) {
-      const select = document.createElement('select');
-      select.className = className;
-      select.innerHTML = options
-        .map(person => `<option value="${person.name}">${person.name} (${person.email})</option>`)
-        .join('');
-      return select;
-    }
+  // Function to update dropdown options dynamically
+  function updateDropdownOptions() {
+    const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
+      .map(select => select.value)
+      .filter(val => val); // Get selected payer names
 
-    function addPayer() {
-      const payersDiv = document.getElementById('payers');
-      const payerDiv = document.createElement('div');
-      payerDiv.className = 'payer';
-      payerDiv.appendChild(createDropdown(people, 'payer-dropdown'));
-      payerDiv.innerHTML += `<input type="number" step="0.01" placeholder="Payer Amount">`;
-      payersDiv.appendChild(payerDiv);
-      $(payerDiv).find('select').select2(); // Initialize Select2 on the new select element
-    }
+    document.querySelectorAll('.payer-dropdown').forEach((select, index) => {
+      const currentValue = select.value; // Save current value
+      select.innerHTML = ''; // Clear options
 
-    function removePayer() {
-      const payersDiv = document.getElementById('payers');
-      if (payersDiv.lastChild) {
-        payersDiv.removeChild(payersDiv.lastChild);
-      }
-    }
-
-    function addMember() {
-      const membersDiv = document.getElementById('members');
-      const memberDiv = document.createElement('div');
-      memberDiv.className = 'member';
-      memberDiv.appendChild(createDropdown(people, 'member-dropdown'));
-      memberDiv.innerHTML += `<input type="number" step="0.01" placeholder="Split">`;
-      membersDiv.appendChild(memberDiv);
-      $(memberDiv).find('select').select2(); // Initialize Select2 on the new select element
-    }
-
-    function removeMember() {
-      const membersDiv = document.getElementById('members');
-      if (membersDiv.lastChild) {
-        membersDiv.removeChild(membersDiv.lastChild);
-      }
-    }
-
-    function submitForm() {
-      const formData = {
-        description: document.querySelector('[name="description"]').value,
-        date: document.querySelector('[name="date"]').value,
-        totalAmount: parseFloat(document.querySelector('[name="amount"]').value),
-        splitType: document.querySelector('[name="splitType"]').value,
-        payers: [...document.querySelectorAll('.payer')].map(payer => ({
-          name: $(payer).find('select').val(),
-          payerAmount: parseFloat(payer.querySelector('input[type="number"]').value),
-        })),
-        members: [...document.querySelectorAll('.member')].map(member => ({
-          name: $(member).find('select').val(),
-          split: parseFloat(member.querySelector('input[type="number"]').value),
-        })),
-      };
-      
-      // Call Google Apps Script function to process the form
-      google.script.run.addBillToSheet(formData);
-      
-      // Close the dialog after submission
-      google.script.host.close();
-    }
-
-    function resetMemberSplits() {
-      const members = document.querySelectorAll('.member input[type="number"]');
-      members.forEach(member => {
-        member.value = '';
+      // Re-add options: Exclude already selected names except for the current dropdown's value
+      people.forEach(person => {
+        if (!selectedPayers.includes(person.name) || person.name === currentValue) {
+          const option = document.createElement('option');
+          option.value = person.name;
+          option.textContent = `${person.name} (${person.email})`;
+          if (person.name === currentValue) option.selected = true;
+          select.appendChild(option);
+        }
       });
-    }
-
-    // Initialize Select2
-    $(document).ready(function() {
-      $('#splitType').select2();
     });
-  </script>
+
+    const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
+      .map(select => select.value)
+      .filter(val => val); // Get selected member names
+
+    document.querySelectorAll('.member-dropdown').forEach((select, index) => {
+      const currentValue = select.value; // Save current value
+      select.innerHTML = ''; // Clear options
+
+      // Re-add options: Exclude already selected names except for the current dropdown's value
+      people.forEach(person => {
+        if (!selectedMembers.includes(person.name) || person.name === currentValue) {
+          const option = document.createElement('option');
+          option.value = person.name;
+          option.textContent = `${person.name} (${person.email})`;
+          if (person.name === currentValue) option.selected = true;
+          select.appendChild(option);
+        }
+      });
+    });
+  }
+
+  function addPayer() {
+    const payersDiv = document.getElementById('payers');
+
+    const payerDiv = document.createElement('div');
+    payerDiv.className = 'payer';
+
+    const select = document.createElement('select');
+    select.className = 'payer-dropdown';
+
+    const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
+      .map(select => select.value)
+      .filter(val => val);
+
+    // Add only unselected names to the new dropdown
+    people.forEach(person => {
+      if (!selectedPayers.includes(person.name)) {
+        const option = document.createElement('option');
+        option.value = person.name;
+        option.textContent = `${person.name} (${person.email})`;
+        select.appendChild(option);
+      }
+    });
+
+    select.addEventListener('change', updateDropdownOptions);
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.step = '0.01';
+    input.placeholder = 'Payer Amount';
+
+    payerDiv.appendChild(select);
+    payerDiv.appendChild(input);
+
+    payersDiv.appendChild(payerDiv);
+    updateDropdownOptions(); // Update dropdown options after adding
+  }
+
+  function removePayer() {
+    const payersDiv = document.getElementById('payers');
+    if (payersDiv.lastChild) {
+      payersDiv.removeChild(payersDiv.lastChild);
+      updateDropdownOptions(); // Refresh dropdowns after removal
+    }
+  }
+
+  function addMember() {
+    const membersDiv = document.getElementById('members');
+    const memberDiv = document.createElement('div');
+    memberDiv.className = 'member';
+
+    const select = document.createElement('select');
+    select.className = 'member-dropdown';
+
+    // Get selected members from other member dropdowns
+    const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
+      .map(select => select.value)
+      .filter(val => val);
+
+    // Add only unselected names to the new dropdown
+    people.forEach(person => {
+      if (!selectedMembers.includes(person.name)) {
+        const option = document.createElement('option');
+        option.value = person.name;
+        option.textContent = `${person.name} (${person.email})`;
+        select.appendChild(option);
+      }
+    });
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.step = '0.01';
+    input.placeholder = 'Split';
+
+    memberDiv.appendChild(select);
+    memberDiv.appendChild(input);
+
+    membersDiv.appendChild(memberDiv);
+    updateDropdownOptions(); // Update dropdown options after adding a member
+  }
+
+  function removeMember() {
+    const membersDiv = document.getElementById('members');
+    if (membersDiv.lastChild) {
+      membersDiv.removeChild(membersDiv.lastChild);
+      updateDropdownOptions(); // Update dropdown options after adding a member
+    }
+  }
+
+  function submitForm() {
+    const formData = {
+      description: document.querySelector('[name="description"]').value,
+      date: document.querySelector('[name="date"]').value,
+      totalAmount: parseFloat(document.querySelector('[name="amount"]').value),
+      splitType: document.querySelector('[name="splitType"]').value,
+      payers: [...document.querySelectorAll('.payer')].map(payer => ({
+        name: $(payer).find('select').val(),
+        payerAmount: parseFloat(payer.querySelector('input[type="number"]').value),
+      })),
+      members: [...document.querySelectorAll('.member')].map(member => ({
+        name: $(member).find('select').val(),
+        split: parseFloat(member.querySelector('input[type="number"]').value),
+      })),
+    };
+
+    google.script.run.addBillToSheet(formData);
+    google.script.host.close();
+  }
+
+  // Initialize Select2 on page load
+  $(document).ready(function() {
+    $('#splitType').select2();
+  });
+</script>
+
 </body>
 </html>
