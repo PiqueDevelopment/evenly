@@ -96,30 +96,49 @@
     .select2-results__options {
       overflow-x: hidden;
     }
-  </style>
+
+    /* Style for the buttons */
+    .split-type-btn {
+      padding: 10px 20px;
+      margin: 5px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      background-color: #f0f0f0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .split-type-btn.active {
+      background-color: #4CAF50; /* Green when active */
+      color: white;
+    }
+
+    .split-type-btn:hover {
+      background-color: #ddd;
+    }
+    </style>
   <!-- Include Select2 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
 
 <body>
   <form id="billForm">
-    <label>Description:</label><br>
+    <label>Description (Optional):</label><br>
     <textarea name="description" required></textarea><br><br>
 
-    <label>Date:</label><br>
+    <label>Date (Optional):</label><br>
     <input type="date" name="date" required><br><br>
 
     <label>Total Amount:</label><br>
     <input type="number" name="amount" step="0.01" required><br><br>
 
     <label>Split Type:</label><br>
-    <select name="splitType" id="splitType" onchange="resetMemberSplits()">
-      <option value="percentage">Percentage</option>
-      <option value="amount">Dollar Amount</option>
+    <select id="splitTypeDropdown" class="split-type-dropdown" onchange="switchSplitType(this.value)">
+        <option value="percentage" selected>Percentage</option>
+        <option value="amount">Dollar Amount</option>
     </select><br><br>
 
     <div>
-      <label>Who Paid:</label><br>
+      <label>Who Paid (Optional):</label><br>
       <div id="payers"></div>
       <div class="payer-buttons">
         <button type="button" onclick="addPayer()">Add Payer</button>
@@ -146,164 +165,229 @@
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
   <script>
-  const people = JSON.parse('<?= people ?>');
+    const people = JSON.parse('<?= people ?>');
+    let splitType = 'percentage'; // Default to percentage
 
-  // Function to update dropdown options dynamically
-  function updateDropdownOptions() {
-    const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
-      .map(select => select.value)
-      .filter(val => val); // Get selected payer names
+    // Function to update dropdown options dynamically
+    function updateDropdownOptions() {
+      const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
+        .map(select => select.value)
+        .filter(val => val); // Get selected payer names
 
-    document.querySelectorAll('.payer-dropdown').forEach((select, index) => {
-      const currentValue = select.value; // Save current value
-      select.innerHTML = ''; // Clear options
+      document.querySelectorAll('.payer-dropdown').forEach((select, index) => {
+        const currentValue = select.value; // Save current value
+        select.innerHTML = ''; // Clear options
 
-      // Re-add options: Exclude already selected names except for the current dropdown's value
-      people.forEach(person => {
-        if (!selectedPayers.includes(person.name) || person.name === currentValue) {
-          const option = document.createElement('option');
-          option.value = person.name;
-          option.textContent = `${person.name} (${person.email})`;
-          if (person.name === currentValue) option.selected = true;
-          select.appendChild(option);
-        }
+        // Re-add options: Exclude already selected names except for the current dropdown's value
+        people.forEach(person => {
+          if (!selectedPayers.includes(person.name) || person.name === currentValue) {
+            const option = document.createElement('option');
+            option.value = person.name;
+            option.textContent = `${person.name} (${person.email})`;
+            if (person.name === currentValue) option.selected = true;
+            select.appendChild(option);
+          }
+        });
       });
-    });
 
-    const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
-      .map(select => select.value)
-      .filter(val => val); // Get selected member names
+      const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
+        .map(select => select.value)
+        .filter(val => val); // Get selected member names
 
-    document.querySelectorAll('.member-dropdown').forEach((select, index) => {
-      const currentValue = select.value; // Save current value
-      select.innerHTML = ''; // Clear options
+      document.querySelectorAll('.member-dropdown').forEach((select, index) => {
+        const currentValue = select.value; // Save current value
+        select.innerHTML = ''; // Clear options
 
-      // Re-add options: Exclude already selected names except for the current dropdown's value
-      people.forEach(person => {
-        if (!selectedMembers.includes(person.name) || person.name === currentValue) {
-          const option = document.createElement('option');
-          option.value = person.name;
-          option.textContent = `${person.name} (${person.email})`;
-          if (person.name === currentValue) option.selected = true;
-          select.appendChild(option);
-        }
+        // Re-add options: Exclude already selected names except for the current dropdown's value
+        people.forEach(person => {
+          if (!selectedMembers.includes(person.name) || person.name === currentValue) {
+            const option = document.createElement('option');
+            option.value = person.name;
+            option.textContent = `${person.name} (${person.email})`;
+            if (person.name === currentValue) option.selected = true;
+            select.appendChild(option);
+          }
+        });
       });
-    });
-  }
-
-  function addPayer() {
-    const payersDiv = document.getElementById('payers');
-
-    const payerDiv = document.createElement('div');
-    payerDiv.className = 'payer';
-
-    const select = document.createElement('select');
-    select.className = 'payer-dropdown';
-
-    const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
-      .map(select => select.value)
-      .filter(val => val);
-
-    // Add only unselected names to the new dropdown
-    people.forEach(person => {
-      if (!selectedPayers.includes(person.name)) {
-        const option = document.createElement('option');
-        option.value = person.name;
-        option.textContent = `${person.name} (${person.email})`;
-        select.appendChild(option);
-      }
-    });
-
-    select.addEventListener('change', updateDropdownOptions);
-
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.step = '0.01';
-    input.placeholder = 'Payer Amount';
-
-    payerDiv.appendChild(select);
-    payerDiv.appendChild(input);
-
-    payersDiv.appendChild(payerDiv);
-    updateDropdownOptions(); // Update dropdown options after adding
-  }
-
-  function removePayer() {
-    const payersDiv = document.getElementById('payers');
-    if (payersDiv.lastChild) {
-      payersDiv.removeChild(payersDiv.lastChild);
-      updateDropdownOptions(); // Refresh dropdowns after removal
     }
-  }
 
-  function addMember() {
-    const membersDiv = document.getElementById('members');
-    const memberDiv = document.createElement('div');
-    memberDiv.className = 'member';
+    // Function to switch between Percentage and Dollar Amount
+    function switchSplitType(type) {
+      splitType = type;
+      const members = document.querySelectorAll('.member');
+      members.forEach(member => {
+        const input = member.querySelector('input[type="number"]');
+        const currentSplit = parseFloat(input.value);
 
-    const select = document.createElement('select');
-    select.className = 'member-dropdown';
+        if (splitType === 'amount') {
+          const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+          input.value = (currentSplit / 100) * totalAmount; // Convert percentage to dollar amount
+        } else {
+          const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+          input.value = (currentSplit / totalAmount) * 100; // Convert dollar amount to percentage
+        }
+      });
 
-    // Get selected members from other member dropdowns
-    const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
-      .map(select => select.value)
-      .filter(val => val);
+      updateDropdownOptions();
 
-    // Add only unselected names to the new dropdown
-    people.forEach(person => {
-      if (!selectedMembers.includes(person.name)) {
-        const option = document.createElement('option');
-        option.value = person.name;
-        option.textContent = `${person.name} (${person.email})`;
-        select.appendChild(option);
+      // Toggle active class on buttons
+      const percentageButton = document.getElementById('percentageButton');
+      const amountButton = document.getElementById('amountButton');
+
+      // Remove the active class from both buttons
+      percentageButton.classList.remove('active');
+      amountButton.classList.remove('active');
+
+      // Add the active class to the selected button
+      if (type === 'percentage') {
+        percentageButton.classList.add('active');
+      } else {
+        amountButton.classList.add('active');
       }
-    });
+    }
 
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.step = '0.01';
-    input.placeholder = 'Split';
+    function addPayer() {
+      const payersDiv = document.getElementById('payers');
 
-    memberDiv.appendChild(select);
-    memberDiv.appendChild(input);
+      const payerDiv = document.createElement('div');
+      payerDiv.className = 'payer';
 
-    membersDiv.appendChild(memberDiv);
-    updateDropdownOptions(); // Update dropdown options after adding a member
-  }
+      const select = document.createElement('select');
+      select.className = 'payer-dropdown';
 
-  function removeMember() {
-    const membersDiv = document.getElementById('members');
-    if (membersDiv.lastChild) {
-      membersDiv.removeChild(membersDiv.lastChild);
+      const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
+        .map(select => select.value)
+        .filter(val => val);
+
+      // Add only unselected names to the new dropdown
+      people.forEach(person => {
+        if (!selectedPayers.includes(person.name)) {
+          const option = document.createElement('option');
+          option.value = person.name;
+          option.textContent = `${person.name} (${person.email})`;
+          select.appendChild(option);
+        }
+      });
+
+      select.addEventListener('change', updateDropdownOptions);
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = '0.01';
+      input.placeholder = splitType === 'percentage' ? 'Percentage' : 'Dollar Amount';
+
+      payerDiv.appendChild(select);
+      payerDiv.appendChild(input);
+
+      payersDiv.appendChild(payerDiv);
+      updateDropdownOptions(); // Update dropdown options after adding
+    }
+
+    function removePayer() {
+      const payersDiv = document.getElementById('payers');
+      if (payersDiv.lastChild) {
+        payersDiv.removeChild(payersDiv.lastChild);
+        updateDropdownOptions(); // Refresh dropdowns after removal
+      }
+    }
+
+    function addMember() {
+      const membersDiv = document.getElementById('members');
+      const memberDiv = document.createElement('div');
+      memberDiv.className = 'member';
+
+      const select = document.createElement('select');
+      select.className = 'member-dropdown';
+
+      // Get selected members from other member dropdowns
+      const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
+        .map(select => select.value)
+        .filter(val => val);
+
+      // Add only unselected names to the new dropdown
+      people.forEach(person => {
+        if (!selectedMembers.includes(person.name)) {
+          const option = document.createElement('option');
+          option.value = person.name;
+          option.textContent = `${person.name} (${person.email})`;
+          select.appendChild(option);
+        }
+      });
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = '0.01';
+      input.placeholder = splitType === 'percentage' ? 'Percentage' : 'Dollar Amount';
+
+      memberDiv.appendChild(select);
+      memberDiv.appendChild(input);
+
+      membersDiv.appendChild(memberDiv);
       updateDropdownOptions(); // Update dropdown options after adding a member
     }
-  }
 
-  function submitForm() {
-    const formData = {
-      description: document.querySelector('[name="description"]').value,
-      date: document.querySelector('[name="date"]').value,
-      totalAmount: parseFloat(document.querySelector('[name="amount"]').value),
-      splitType: document.querySelector('[name="splitType"]').value,
-      payers: [...document.querySelectorAll('.payer')].map(payer => ({
-        name: $(payer).find('select').val(),
-        payerAmount: parseFloat(payer.querySelector('input[type="number"]').value),
-      })),
-      members: [...document.querySelectorAll('.member')].map(member => ({
-        name: $(member).find('select').val(),
-        split: parseFloat(member.querySelector('input[type="number"]').value),
-      })),
-    };
+    function removeMember() {
+      const membersDiv = document.getElementById('members');
+      if (membersDiv.lastChild) {
+        membersDiv.removeChild(membersDiv.lastChild);
+        updateDropdownOptions(); // Update dropdown options after adding a member
+      }
+    }
 
-    google.script.run.addBillToSheet(formData);
-    google.script.host.close();
-  }
+    function submitForm() {
+      const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+      let totalSplit = 0;
+      let totalDollarAmount = 0;
+      let isValid = true;
 
-  // Initialize Select2 on page load
-  $(document).ready(function() {
-    $('#splitType').select2();
-  });
-</script>
+      // Collect member splits or amounts
+      const members = [...document.querySelectorAll('.member')].map(member => {
+        const splitValue = parseFloat(member.querySelector('input[type="number"]').value);
+        const memberName = $(member).find('select').val();
 
+        if (splitType === 'percentage') {
+          totalSplit += splitValue; // Sum percentages
+        } else if (splitType === 'amount') {
+          totalDollarAmount += splitValue; // Sum dollar amounts
+        }
+
+        return {
+          name: memberName,
+          split: splitValue
+        };
+      });
+
+      // Validate based on Split Type
+      if (splitType === 'percentage' && totalSplit > 100) {
+        alert('The total split percentage cannot exceed 100%.');
+        isValid = false;
+      } else if (splitType === 'amount' && totalDollarAmount > totalAmount) {
+        alert('The total amount of splits cannot exceed the total amount.');
+        isValid = false;
+      }
+
+      if (isValid) {
+        const formData = {
+          description: document.querySelector('[name="description"]').value,
+          date: document.querySelector('[name="date"]').value,
+          totalAmount: totalAmount,
+          splitType: splitType,
+          payers: [...document.querySelectorAll('.payer')].map(payer => ({
+            name: $(payer).find('select').val(),
+            payerAmount: parseFloat(payer.querySelector('input[type="number"]').value),
+          })),
+          members: members,
+        };
+
+        google.script.run.addBillToSheet(formData);
+        google.script.host.close();
+      }
+    }
+
+    // Initialize Select2 on page load
+    $(document).ready(function() {
+      $('#splitType').select2();
+    });
+  </script>
 </body>
 </html>
