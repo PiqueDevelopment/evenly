@@ -136,88 +136,85 @@ function autoResizeColumnsD_F_G(sheet) {
   sheet.setColumnWidth(6, sheet.getColumnWidth(6) + 40);
 }
 
-// Updates the contribution splits when a change is made
-function updateSplit() {
-  const splitType = document.querySelector('[name="splitType"]').value;
-  const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
-  
-  if (!totalAmount) return;  // Exit if total amount is not set
-
-  const members = document.querySelectorAll('.member');
-  const payers = document.querySelectorAll('.payer');
-
-  if (splitType === 'percentage') {
-    let totalPercentagePaid = 0;
-
-    // Sum up percentages of payers
-    payers.forEach(payer => {
-      totalPercentagePaid += parseFloat(payer.querySelector('input').value) || 0;
-    });
-
-    // Distribute remaining percentage among members
-    members.forEach(member => {
-      const currentSplit = parseFloat(member.querySelector('input').value) || 0;
-      if (!currentSplit) {
-        member.querySelector('input').value = ((100 - totalPercentagePaid) / members.length).toFixed(2);
-      }
-    });
-  } else if (splitType === 'amount') {
-    let totalAmountPaid = 0;
-
-    // Sum up amounts paid by payers
-    payers.forEach(payer => {
-      totalAmountPaid += parseFloat(payer.querySelector('input').value) || 0;
-    });
-
-    // Distribute remaining amount among members
-    members.forEach(member => {
-      const currentSplit = parseFloat(member.querySelector('input').value) || 0;
-      if (!currentSplit) {
-        member.querySelector('input').value = ((totalAmount - totalAmountPaid) / members.length).toFixed(2);
-      }
-    });
-  }
-}
-
 // Adds a new member to the bill form and auto-calculates the split
 function addMember() {
   const membersDiv = document.getElementById('members');
   const memberDiv = document.createElement('div');
   memberDiv.className = 'member';
   memberDiv.appendChild(createDropdown(people, 'member-dropdown'));
-  memberDiv.innerHTML += `<input type="number" step="0.01" placeholder="Split" oninput="updateSplit()">`;
-
   membersDiv.appendChild(memberDiv);
-  
-  // Recalculate splits after adding a member
-  updateSplit();
 }
 
 // Submits the form data to Google Apps Script
-function submitForm() {
-  // Ensure the splits are up-to-date before submission
-  updateSplit();
+function submitForm(event) {
+  event.preventDefault(); // Prevent default form submission
 
-  const formData = {
-    description: document.querySelector('[name="description"]').value,
-    date: document.querySelector('[name="date"]').value,
-    amount: parseFloat(document.querySelector('[name="amount"]').value),
-    splitType: document.querySelector('[name="splitType"]').value,
-    payers: [...document.querySelectorAll('.payer')].map(payer => ({
-      name: payer.querySelector('.payer-dropdown').value,
-      amount: parseFloat(payer.querySelector('input').value),
-    })),
-    members: [...document.querySelectorAll('.member')].map(member => ({
-      name: member.querySelector('.member-dropdown').value,
-      split: parseFloat(member.querySelector('input').value),
-    })),
-  };
-  
-  // Call the Google Apps Script function to process the form data
-  google.script.run.addBillToSheet(formData);
-  
-  // Close the dialog after submission
-  google.script.host.close();
+  const submitButton = document.getElementById('submitButton');
+  submitButton.disabled = true;
+  submitButton.textContent = 'Processing...';
+  submitButton.style.backgroundColor = '#ccc';
+
+  const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+  let totalSplit = 0;
+  let totalDollarAmount = 0;
+  let isValid = true;
+
+  // Collect member splits or amounts
+  const members = [...document.querySelectorAll('.member')].map(member => {
+    const splitValue = parseFloat(member.querySelector('input[type="number"]').value);
+    const memberName = $(member).find('select').val();
+
+    if (splitType === 'percentage') {
+      totalSplit += splitValue; // Sum percentages
+    } else if (splitType === 'amount') {
+      totalDollarAmount += splitValue; // Sum dollar amounts
+    }
+
+    return {
+      name: memberName,
+      split: splitValue
+    };
+  });
+
+  // Validate based on Split Type
+  if (splitType === 'percentage' && totalSplit > 100) {
+    alert('The total split percentage cannot exceed 100%.');
+    isValid = false;
+  } else if (splitType === 'amount' && totalDollarAmount > totalAmount) {
+    alert('The total amount of splits cannot exceed the total amount.');
+    isValid = false;
+  }
+
+  if (isValid) {
+    const formData = {
+      uniqueId: JSON.parse('<?= formData ?>').uniqueId,
+      description: document.querySelector('[name="description"]').value,
+      date: document.querySelector('[name="date"]').value,
+      totalAmount: totalAmount,
+      splitType: splitType,
+      payers: [...document.querySelectorAll('.payer')].map(payer => ({
+        name: $(payer).find('select').val(),
+        payerAmount: parseFloat(payer.querySelector('input[type="number"]').value),
+      })),
+      members: members,
+    };
+
+    google.script.run
+      .withSuccessHandler(() => {
+        google.script.host.close();
+      })
+      .withFailureHandler(error => {
+        alert('An error occurred: ' + error.message);
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit';
+        submitButton.style.backgroundColor = '#1abc9c';
+      })
+      .updateBillInSheet(formData);
+  } else {
+    submitButton.disabled = false;
+    submitButton.textContent = 'Submit';
+    submitButton.style.backgroundColor = '#1abc9c';
+  }
 }
 
 // Creates folder structure for the bill entry

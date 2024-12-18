@@ -209,6 +209,9 @@
           }
         });
       });
+
+      // Initialize Select2 on all dropdowns
+      $('.payer-dropdown, .member-dropdown').select2();
     }
 
     // Function to switch between Percentage and Dollar Amount
@@ -274,7 +277,7 @@
       const input = document.createElement('input');
       input.type = 'number';
       input.step = '0.01';
-      input.placeholder = splitType === 'percentage' ? 'Percentage' : 'Dollar Amount';
+      input.placeholder = 'Payer Amount';
 
       payerDiv.appendChild(select);
       payerDiv.appendChild(input);
@@ -317,7 +320,7 @@
       const input = document.createElement('input');
       input.type = 'number';
       input.step = '0.01';
-      input.placeholder = splitType === 'percentage' ? 'Percentage' : 'Dollar Amount';
+      input.placeholder = 'Split';
 
       memberDiv.appendChild(select);
       memberDiv.appendChild(input);
@@ -386,7 +389,8 @@
 
     // Initialize Select2 on page load
     $(document).ready(function() {
-      $('#splitType').select2();
+      $('#splitTypeDropdown').select2();
+      updateDropdownOptions(); // Initialize Select2 on all dropdowns
     });
   </script>
 </body>
