@@ -155,7 +155,7 @@
       </div><br><br>
     </div>
 
-    <button type="submit" onclick="submitForm()">Submit</button>
+    <button type="submit" id="submitButton" onclick="submitForm(event)">Submit</button>
   </form>
 
   <!-- Include jQuery -->
@@ -337,11 +337,74 @@
       }
     }
 
-    function submitForm() {
-      const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+    function submitForm(event) {
+      event.preventDefault(); // Prevent default form submission
+
+      const totalAmountInput = document.querySelector('[name="amount"]');
+      const membersDiv = document.getElementById('members');
+      const submitButton = document.getElementById('submitButton');
+      let isValid = true;
+
+      // Reset previous validation styles
+      totalAmountInput.style.borderColor = '';
+      membersDiv.style.borderColor = '';
+
+      // Validate Total Amount
+      const totalAmount = parseFloat(totalAmountInput.value);
+      if (isNaN(totalAmount) || totalAmount <= 0) {
+        totalAmountInput.style.borderColor = 'red';
+        isValid = false;
+      }
+
+      // Validate Members
+      if (membersDiv.children.length === 0) {
+        membersDiv.style.borderColor = 'red';
+        isValid = false;
+      }
+
+      // Validate Split values
+      document.querySelectorAll('.member input[type="number"]').forEach(input => {
+        if (!input.value || parseFloat(input.value) <= 0) {
+          input.style.borderColor = 'red';
+          isValid = false;
+        } else {
+          input.style.borderColor = ''; // Reset border color if valid
+        }
+      });
+
+      // Validate Payer Amount values
+      let totalPayerAmount = 0;
+      const payerInputs = document.querySelectorAll('.payer input[type="number"]');
+      if (payerInputs.length > 0) {
+        payerInputs.forEach(input => {
+          const payerAmount = parseFloat(input.value);
+          if (!input.value || payerAmount <= 0) {
+            input.style.borderColor = 'red';
+            isValid = false;
+          } else {
+            input.style.borderColor = ''; // Reset border color if valid
+            totalPayerAmount += payerAmount;
+          }
+        });
+
+        // Check if total payer amount matches total amount
+        if (totalPayerAmount !== totalAmount) {
+          alert('The total amount paid must equal the total amount of the bill.');
+          isValid = false;
+        }
+      }
+
+      if (!isValid) {
+        alert('Total Amount / Members / Payer Amount cannot be empty or invalid.');
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = 'Processing...';
+      submitButton.style.backgroundColor = '#ccc';
+
       let totalSplit = 0;
       let totalDollarAmount = 0;
-      let isValid = true;
 
       // Collect member splits or amounts
       const members = [...document.querySelectorAll('.member')].map(member => {
@@ -384,6 +447,10 @@
 
         google.script.run.addBillToSheet(formData);
         google.script.host.close();
+      } else {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit';
+        submitButton.style.backgroundColor = '#1abc9c';
       }
     }
 

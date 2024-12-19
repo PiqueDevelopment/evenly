@@ -99,10 +99,10 @@
 <body>
   <form id="billForm">
     <label>Description (Optional):</label><br>
-    <textarea name="description" required></textarea><br><br>
+    <textarea name="description"></textarea><br><br>
 
     <label>Date (Optional):</label><br>
-    <input type="date" name="date" required><br><br>
+    <input type="date" name="date"><br><br>
 
     <label>Total Amount:</label><br>
     <input type="number" name="amount" step="0.01" required><br><br>
@@ -113,13 +113,23 @@
       <option value="amount">Dollar Amount</option>
     </select><br><br>
 
-    <div id="payers"></div>
-    <button type="button" id="addPayer">Add Payer</button>
-    <button type="button" id="removePayer">Remove Payer</button><br><br>
+    <div>
+      <label>Who Paid (Optional):</label><br>
+      <div id="payers"></div>
+      <div class="payer-buttons">
+        <button type="button" id="addPayer">Add Payer</button>
+        <button type="button" id="removePayer">Remove Payer</button>
+      </div><br><br>
+    </div>
 
-    <div id="members"></div>
-    <button type="button" id="addMember">Add Member</button>
-    <button type="button" id="removeMember">Remove Member</button><br><br>
+    <div>
+      <label>Members (Name and Split):</label><br>
+      <div id="members"></div>
+      <div class="member-buttons">
+        <button type="button" id="addMember">Add Member</button>
+        <button type="button" id="removeMember">Remove Member</button>
+      </div><br><br>
+    </div>
 
     <button type="submit" id="submitButton">Submit</button>
   </form>
@@ -243,15 +253,71 @@
     function submitForm(event) {
       event.preventDefault(); // Prevent default form submission
 
+      const totalAmountInput = document.querySelector('[name="amount"]');
+      const membersDiv = document.getElementById('members');
       const submitButton = document.getElementById('submitButton');
+      let isValid = true;
+
+      // Reset previous validation styles
+      totalAmountInput.style.borderColor = '';
+      membersDiv.style.borderColor = '';
+
+      // Validate Total Amount
+      const totalAmount = parseFloat(totalAmountInput.value);
+      if (isNaN(totalAmount) || totalAmount <= 0) {
+        totalAmountInput.style.borderColor = 'red';
+        isValid = false;
+      }
+
+      // Validate Members
+      if (membersDiv.children.length === 0) {
+        membersDiv.style.borderColor = 'red';
+        isValid = false;
+      }
+
+      // Validate Split values
+      document.querySelectorAll('.member input[type="number"]').forEach(input => {
+        if (!input.value || parseFloat(input.value) <= 0) {
+          input.style.borderColor = 'red';
+          isValid = false;
+        } else {
+          input.style.borderColor = ''; // Reset border color if valid
+        }
+      });
+
+      // Validate Payer Amount values
+      let totalPayerAmount = 0;
+      const payerInputs = document.querySelectorAll('.payer input[type="number"]');
+      if (payerInputs.length > 0) {
+        payerInputs.forEach(input => {
+          const payerAmount = parseFloat(input.value);
+          if (!input.value || payerAmount <= 0) {
+            input.style.borderColor = 'red';
+            isValid = false;
+          } else {
+            input.style.borderColor = ''; // Reset border color if valid
+            totalPayerAmount += payerAmount;
+          }
+        });
+
+        // Check if total payer amount matches total amount
+        if (totalPayerAmount !== totalAmount) {
+          alert('The total amount paid must equal the total amount of the bill.');
+          isValid = false;
+        }
+      }
+
+      if (!isValid) {
+        alert('Total Amount / Members / Payer Amount cannot be empty or invalid.');
+        return;
+      }
+
       submitButton.disabled = true;
       submitButton.textContent = 'Processing...';
       submitButton.style.backgroundColor = '#ccc';
 
-      const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
       let totalSplit = 0;
       let totalDollarAmount = 0;
-      let isValid = true;
 
       // Collect member splits or amounts
       const members = [...document.querySelectorAll('.member')].map(member => {
@@ -282,8 +348,8 @@
       if (isValid) {
         const formData = {
           uniqueId: JSON.parse('<?= formData ?>').uniqueId,
-          description: document.querySelector('[name="description"]').value,
-          date: document.querySelector('[name="date"]').value,
+          description: document.querySelector('[name="description"]').value || '',
+          date: document.querySelector('[name="date"]').value || '',
           totalAmount: totalAmount,
           splitType: splitType,
           payers: [...document.querySelectorAll('.payer')].map(payer => ({
@@ -322,22 +388,28 @@
       $('#splitType').val(splitType).trigger('change'); // Set the value and trigger change event
       $('#splitType').select2();
 
-      document.querySelector('[name="description"]').value = formData.description;
+      if (formData.description) {
+        document.querySelector('[name="description"]').value = formData.description;
+      }
 
-      // Convert date from yyyy/mm/dd to yyyy-mm-dd
-      const dateParts = formData.date.split('-');
-      const formattedDate = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
-      document.querySelector('[name="date"]').value = formattedDate;
+      if (formData.date) {
+        // Convert date from yyyy/mm/dd to yyyy-mm-dd
+        const dateParts = formData.date.split('-');
+        const formattedDate = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
+        document.querySelector('[name="date"]').value = formattedDate;
+      }
 
-      document.querySelector('[name="amount"]').value = formData.totalAmount;
+      if (formData.totalAmount) {
+        document.querySelector('[name="amount"]').value = formData.totalAmount;
+      }
 
-      const whoPaid = formData.whoPaid.split('\n');
+      const whoPaid = formData.whoPaid ? formData.whoPaid.split('\n') : [];
       whoPaid.forEach(payer => {
         const [name, amount] = payer.split(': $');
         addPayer(name.trim(), amount.trim());
       });
 
-      const contributionSplit = formData.contributionSplit.split('\n');
+      const contributionSplit = formData.contributionSplit ? formData.contributionSplit.split('\n') : [];
       contributionSplit.forEach(member => {
         const [name, split] = member.split(splitType === 'amount' ? ': $' : ': ');
         addMember(name.trim(), splitType === 'amount' ? split.trim() : parseFloat(split).toFixed(2));
