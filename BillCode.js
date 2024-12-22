@@ -133,7 +133,7 @@ function autoResizeColumnsD_F_G(sheet) {
   // Add extra space to columns D and F
   sheet.setColumnWidth(4, sheet.getColumnWidth(4) + 30);
   sheet.setColumnWidth(6, sheet.getColumnWidth(6) + 30);
-  sheet.setColumnWidth(6, sheet.getColumnWidth(6) + 40);
+  sheet.setColumnWidth(7, sheet.getColumnWidth(7) + 40);
 }
 
 // Adds a new member to the bill form and auto-calculates the split

@@ -138,15 +138,6 @@
     </select><br><br>
 
     <div>
-      <label>Who Paid (Optional):</label><br>
-      <div id="payers"></div>
-      <div class="payer-buttons">
-        <button type="button" onclick="addPayer()">Add Payer</button>
-        <button type="button" onclick="removePayer()">Remove Payer</button>
-      </div><br><br>
-    </div>
-
-    <div>
       <label>Members (Name and Split):</label><br>
       <div id="members"></div>
       <div class="member-buttons">
@@ -155,7 +146,16 @@
       </div><br><br>
     </div>
 
-    <button type="submit" id="submitButton" onclick="submitForm(event)">Submit</button>
+    <div>
+      <label>Who Paid (Optional):</label><br>
+      <div id="payers"></div>
+      <div class="payer-buttons">
+        <button type="button" onclick="addPayer()">Add Payer</button>
+        <button type="button" onclick="removePayer()">Remove Payer</button>
+      </div><br><br>
+    </div>
+
+    <button type="submit" onclick="submitForm()">Submit</button>
   </form>
 
   <!-- Include jQuery -->
@@ -170,49 +170,53 @@
 
     // Function to update dropdown options dynamically
     function updateDropdownOptions() {
-      const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
-        .map(select => select.value)
-        .filter(val => val); // Get selected payer names
+  // Get selected members
+  const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
+    .map(select => select.value)
+    .filter(val => val); // Get selected member names
 
-      document.querySelectorAll('.payer-dropdown').forEach((select, index) => {
-        const currentValue = select.value; // Save current value
-        select.innerHTML = ''; // Clear options
+  // Update member dropdowns (unchanged)
+  document.querySelectorAll('.member-dropdown').forEach((select, index) => {
+    const currentValue = select.value; // Save current value
+    select.innerHTML = ''; // Clear options
 
-        // Re-add options: Exclude already selected names except for the current dropdown's value
-        people.forEach(person => {
-          if (!selectedPayers.includes(person.name) || person.name === currentValue) {
-            const option = document.createElement('option');
-            option.value = person.name;
-            option.textContent = `${person.name} (${person.email})`;
-            if (person.name === currentValue) option.selected = true;
-            select.appendChild(option);
-          }
-        });
-      });
+    // Add options: Include only unselected members or the current value
+    people.forEach(person => {
+      if (!selectedMembers.includes(person.name) || person.name === currentValue) {
+        const option = document.createElement('option');
+        option.value = person.name;
+        option.textContent = `${person.name} (${person.email})`;
+        if (person.name === currentValue) option.selected = true;
+        select.appendChild(option);
+      }
+    });
+  });
 
-      const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
-        .map(select => select.value)
-        .filter(val => val); // Get selected member names
+  // Update payer dropdowns based on selected members
+  const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
+    .map(select => select.value)
+    .filter(val => val); // Get selected payer names
 
-      document.querySelectorAll('.member-dropdown').forEach((select, index) => {
-        const currentValue = select.value; // Save current value
-        select.innerHTML = ''; // Clear options
+  document.querySelectorAll('.payer-dropdown').forEach((select, index) => {
+    const currentValue = select.value; // Save current value
+    select.innerHTML = ''; // Clear options
 
-        // Re-add options: Exclude already selected names except for the current dropdown's value
-        people.forEach(person => {
-          if (!selectedMembers.includes(person.name) || person.name === currentValue) {
-            const option = document.createElement('option');
-            option.value = person.name;
-            option.textContent = `${person.name} (${person.email})`;
-            if (person.name === currentValue) option.selected = true;
-            select.appendChild(option);
-          }
-        });
-      });
+    // Add options: Only members selected in the members dropdown and not yet in payers
+    selectedMembers.forEach(memberName => {
+      if (!selectedPayers.includes(memberName) || memberName === currentValue) {
+        const member = people.find(person => person.name === memberName);
+        const option = document.createElement('option');
+        option.value = member.name;
+        option.textContent = `${member.name} (${member.email})`;
+        if (member.name === currentValue) option.selected = true;
+        select.appendChild(option);
+      }
+    });
+  });
 
-      // Initialize Select2 on all dropdowns
-      $('.payer-dropdown, .member-dropdown').select2();
-    }
+  // Reinitialize Select2 on all dropdowns
+  $('.payer-dropdown, .member-dropdown').select2();
+}
 
     // Function to switch between Percentage and Dollar Amount
     function switchSplitType(type) {
@@ -250,41 +254,28 @@
     }
 
     function addPayer() {
-      const payersDiv = document.getElementById('payers');
+  const payersDiv = document.getElementById('payers');
 
-      const payerDiv = document.createElement('div');
-      payerDiv.className = 'payer';
+  const payerDiv = document.createElement('div');
+  payerDiv.className = 'payer';
 
-      const select = document.createElement('select');
-      select.className = 'payer-dropdown';
+  const select = document.createElement('select');
+  select.className = 'payer-dropdown';
 
-      const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
-        .map(select => select.value)
-        .filter(val => val);
+  // Add options for payers dropdown (initially empty)
+  updateDropdownOptions(); // Populate options after appending the element
 
-      // Add only unselected names to the new dropdown
-      people.forEach(person => {
-        if (!selectedPayers.includes(person.name)) {
-          const option = document.createElement('option');
-          option.value = person.name;
-          option.textContent = `${person.name} (${person.email})`;
-          select.appendChild(option);
-        }
-      });
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.step = '0.01';
+  input.placeholder = 'Payer Amount';
 
-      select.addEventListener('change', updateDropdownOptions);
+  payerDiv.appendChild(select);
+  payerDiv.appendChild(input);
 
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.step = '0.01';
-      input.placeholder = 'Payer Amount';
-
-      payerDiv.appendChild(select);
-      payerDiv.appendChild(input);
-
-      payersDiv.appendChild(payerDiv);
-      updateDropdownOptions(); // Update dropdown options after adding
-    }
+  payersDiv.appendChild(payerDiv);
+  updateDropdownOptions(); // Update dropdown options after adding
+}
 
     function removePayer() {
       const payersDiv = document.getElementById('payers');
@@ -337,74 +328,11 @@
       }
     }
 
-    function submitForm(event) {
-      event.preventDefault(); // Prevent default form submission
-
-      const totalAmountInput = document.querySelector('[name="amount"]');
-      const membersDiv = document.getElementById('members');
-      const submitButton = document.getElementById('submitButton');
-      let isValid = true;
-
-      // Reset previous validation styles
-      totalAmountInput.style.borderColor = '';
-      membersDiv.style.borderColor = '';
-
-      // Validate Total Amount
-      const totalAmount = parseFloat(totalAmountInput.value);
-      if (isNaN(totalAmount) || totalAmount <= 0) {
-        totalAmountInput.style.borderColor = 'red';
-        isValid = false;
-      }
-
-      // Validate Members
-      if (membersDiv.children.length === 0) {
-        membersDiv.style.borderColor = 'red';
-        isValid = false;
-      }
-
-      // Validate Split values
-      document.querySelectorAll('.member input[type="number"]').forEach(input => {
-        if (!input.value || parseFloat(input.value) <= 0) {
-          input.style.borderColor = 'red';
-          isValid = false;
-        } else {
-          input.style.borderColor = ''; // Reset border color if valid
-        }
-      });
-
-      // Validate Payer Amount values
-      let totalPayerAmount = 0;
-      const payerInputs = document.querySelectorAll('.payer input[type="number"]');
-      if (payerInputs.length > 0) {
-        payerInputs.forEach(input => {
-          const payerAmount = parseFloat(input.value);
-          if (!input.value || payerAmount <= 0) {
-            input.style.borderColor = 'red';
-            isValid = false;
-          } else {
-            input.style.borderColor = ''; // Reset border color if valid
-            totalPayerAmount += payerAmount;
-          }
-        });
-
-        // Check if total payer amount matches total amount
-        if (totalPayerAmount !== totalAmount) {
-          alert('The total amount paid must equal the total amount of the bill.');
-          isValid = false;
-        }
-      }
-
-      if (!isValid) {
-        alert('Total Amount / Members / Payer Amount cannot be empty or invalid.');
-        return;
-      }
-
-      submitButton.disabled = true;
-      submitButton.textContent = 'Processing...';
-      submitButton.style.backgroundColor = '#ccc';
-
+    function submitForm() {
+      const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
       let totalSplit = 0;
       let totalDollarAmount = 0;
+      let isValid = true;
 
       // Collect member splits or amounts
       const members = [...document.querySelectorAll('.member')].map(member => {
@@ -447,10 +375,6 @@
 
         google.script.run.addBillToSheet(formData);
         google.script.host.close();
-      } else {
-        submitButton.disabled = false;
-        submitButton.textContent = 'Submit';
-        submitButton.style.backgroundColor = '#1abc9c';
       }
     }
 
