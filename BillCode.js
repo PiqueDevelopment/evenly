@@ -119,6 +119,10 @@ function addBillToSheet(data) {
   // Add a new row for the bill data
   sheet.appendRow([uniqueId, description, date, totalAmount, payers.map(p => `${p.name}: $${p.payerAmount}`).join('\n'), contributionSplit, balanceSplit, folderUrl]);
 
+  // Format the total amount cell (bold, red font color)
+  const totalAmountCell = sheet.getRange(sheet.getLastRow(), 4); // Column D is the total amount
+  totalAmountCell.setFontWeight('bold').setFontColor('red');
+
   // Update total amount and auto-resize columns
   updateTotalAmount();
   autoResizeColumnsD_F_G(sheet);
@@ -129,11 +133,13 @@ function autoResizeColumnsD_F_G(sheet) {
   sheet.autoResizeColumn(4);  // Resize column D (Total Amount)
   sheet.autoResizeColumn(6);  // Resize column F (Contribution Split)
   sheet.autoResizeColumn(7);  // Resize column G (Balance Split)
+  sheet.autoResizeColumn(8);  // Resize column G (Balance Split)
   
   // Add extra space to columns D and F
   sheet.setColumnWidth(4, sheet.getColumnWidth(4) + 30);
   sheet.setColumnWidth(6, sheet.getColumnWidth(6) + 30);
   sheet.setColumnWidth(7, sheet.getColumnWidth(7) + 40);
+  sheet.setColumnWidth(8, sheet.getColumnWidth(8) + 20);
 }
 
 // Adds a new member to the bill form and auto-calculates the split
