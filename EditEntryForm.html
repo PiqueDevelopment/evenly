@@ -114,20 +114,20 @@
     </select><br><br>
 
     <div>
-      <label>Who Paid (Optional):</label><br>
-      <div id="payers"></div>
-      <div class="payer-buttons">
-        <button type="button" id="addPayer">Add Payer</button>
-        <button type="button" id="removePayer">Remove Payer</button>
-      </div><br><br>
-    </div>
-
-    <div>
       <label>Members (Name and Split):</label><br>
       <div id="members"></div>
       <div class="member-buttons">
         <button type="button" id="addMember">Add Member</button>
         <button type="button" id="removeMember">Remove Member</button>
+      </div><br><br>
+    </div>
+
+    <div>
+      <label>Who Paid (Optional):</label><br>
+      <div id="payers"></div>
+      <div class="payer-buttons">
+        <button type="button" id="addPayer">Add Payer</button>
+        <button type="button" id="removePayer">Remove Payer</button>
       </div><br><br>
     </div>
 
@@ -147,25 +147,26 @@
         .map(select => select.value)
         .filter(val => val); // Get selected payer names
 
+      const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
+        .map(select => select.value)
+        .filter(val => val); // Get selected member names
+
       document.querySelectorAll('.payer-dropdown').forEach((select, index) => {
         const currentValue = select.value; // Save current value
         select.innerHTML = ''; // Clear options
 
-        // Re-add options: Exclude already selected names except for the current dropdown's value
-        people.forEach(person => {
-          if (!selectedPayers.includes(person.name) || person.name === currentValue) {
+        // Re-add options: Only members selected in the members dropdown and not yet in payers
+        selectedMembers.forEach(memberName => {
+          if (!selectedPayers.includes(memberName) || memberName === currentValue) {
+            const member = people.find(person => person.name === memberName);
             const option = document.createElement('option');
-            option.value = person.name;
-            option.textContent = `${person.name} (${person.email})`;
-            if (person.name === currentValue) option.selected = true;
+            option.value = member.name;
+            option.textContent = `${member.name} (${member.email})`;
+            if (member.name === currentValue) option.selected = true;
             select.appendChild(option);
           }
         });
       });
-
-      const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
-        .map(select => select.value)
-        .filter(val => val); // Get selected member names
 
       document.querySelectorAll('.member-dropdown').forEach((select, index) => {
         const currentValue = select.value; // Save current value
@@ -201,14 +202,23 @@
       const payerDiv = document.createElement('div');
       payerDiv.className = 'payer';
 
+      const selectedMembers = [...document.querySelectorAll('.member-dropdown')]
+        .map(select => select.value)
+        .filter(val => val);
+
+      if (selectedMembers.length === 0) {
+        alert('Please add members to the "Members" section first.');
+        return;
+      }
+
       const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
         .map(select => select.value)
         .filter(val => val);
 
-      const availablePeople = people.filter(person => !selectedPayers.includes(person.name));
+      const availablePeople = people.filter(person => selectedMembers.includes(person.name) && !selectedPayers.includes(person.name));
       const nextPerson = availablePeople.length > 0 ? availablePeople[0].name : '';
 
-      payerDiv.appendChild(createDropdown(people, 'payer-dropdown', name || nextPerson));
+      payerDiv.appendChild(createDropdown(availablePeople, 'payer-dropdown', name || nextPerson));
       payerDiv.innerHTML += `<input type="number" step="0.01" placeholder="Payer Amount" value="${amount}">`;
       payersDiv.appendChild(payerDiv);
       $(payerDiv).find('select').select2(); // Initialize Select2 on the new select element
@@ -428,6 +438,38 @@
         console.error('billForm element not found');
       }
     });
+
+    function addPayer(name = '', amount = '') {
+      const payersDiv = document.getElementById('payers');
+      const payerDiv = document.createElement('div');
+      payerDiv.className = 'payer';
+
+      const select = document.createElement('select');
+      select.className = 'payer-dropdown';
+
+      // Populate options for payers dropdown
+      people.forEach(person => {
+        const option = document.createElement('option');
+        option.value = person.name;
+        option.textContent = `${person.name} (${person.email})`;
+        if (person.name === name) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = '0.01';
+      input.placeholder = 'Payer Amount';
+      input.value = amount;
+
+      payerDiv.appendChild(select);
+      payerDiv.appendChild(input);
+
+      payersDiv.appendChild(payerDiv);
+      $(select).select2(); // Initialize Select2 on the new select element
+    }
   </script>
 </body>
 </html>
