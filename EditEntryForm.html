@@ -108,7 +108,7 @@
     <input type="number" name="amount" step="0.01" required><br><br>
 
     <label>Split Type:</label><br>
-    <select name="splitType" id="splitType" onchange="resetMemberSplits()">
+    <select name="splitType" id="splitType" onchange="switchSplitType(this.value)">
       <option value="percentage">Percentage</option>
       <option value="amount">Dollar Amount</option>
     </select><br><br>
@@ -140,7 +140,7 @@
   <script>
     const people = JSON.parse('<?= people ?>');
     const formData = JSON.parse('<?= formData ?>');
-    const splitType = '<?= splitType ?>';
+    let splitType = '<?= splitType ?>';
 
     function updateDropdownOptions() {
       const selectedPayers = [...document.querySelectorAll('.payer-dropdown')]
@@ -260,6 +260,38 @@
       }
     }
 
+    function switchSplitType(type) {
+      splitType = type;
+      const members = document.querySelectorAll('.member');
+      const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+      let totalSplit = 0;
+
+      members.forEach((member, index) => {
+        const input = member.querySelector('input[type="number"]');
+        const currentSplit = parseFloat(input.value);
+
+        if (splitType === 'amount') {
+          input.value = ((currentSplit / 100) * totalAmount).toFixed(2); // Convert percentage to dollar amount
+        } else {
+          input.value = ((currentSplit / totalAmount) * 100).toFixed(2); // Convert dollar amount to percentage
+        }
+
+        totalSplit += parseFloat(input.value);
+      });
+
+      // Adjust the last member's split to ensure the total adds up correctly
+      if (members.length > 0) {
+        const lastMemberInput = members[members.length - 1].querySelector('input[type="number"]');
+        if (splitType === 'amount') {
+          lastMemberInput.value = (totalAmount - (totalSplit - parseFloat(lastMemberInput.value))).toFixed(2);
+        } else {
+          lastMemberInput.value = (100 - (totalSplit - parseFloat(lastMemberInput.value))).toFixed(2);
+        }
+      }
+
+      updateDropdownOptions();
+    }
+
     function submitForm(event) {
       event.preventDefault(); // Prevent default form submission
 
@@ -329,7 +361,6 @@
       let totalSplit = 0;
       let totalDollarAmount = 0;
 
-      // Collect member splits or amounts
       const members = [...document.querySelectorAll('.member')].map(member => {
         const splitValue = parseFloat(member.querySelector('input[type="number"]').value);
         const memberName = $(member).find('select').val();
@@ -347,11 +378,11 @@
       });
 
       // Validate based on Split Type
-      if (splitType === 'percentage' && totalSplit > 100) {
-        alert('The total split percentage cannot exceed 100%.');
+      if (splitType === 'percentage' && totalSplit !== 100) {
+        alert('The total split percentage must equal 100%.');
         isValid = false;
-      } else if (splitType === 'amount' && totalDollarAmount > totalAmount) {
-        alert('The total amount of splits cannot exceed the total amount.');
+      } else if (splitType === 'amount' && totalDollarAmount !== totalAmount) {
+        alert('The total amount of splits must equal the total amount.');
         isValid = false;
       }
 
@@ -413,16 +444,16 @@
         document.querySelector('[name="amount"]').value = formData.totalAmount;
       }
 
-      const whoPaid = formData.whoPaid ? formData.whoPaid.split('\n') : [];
-      whoPaid.forEach(payer => {
-        const [name, amount] = payer.split(': $');
-        addPayer(name.trim(), amount.trim());
-      });
-
       const contributionSplit = formData.contributionSplit ? formData.contributionSplit.split('\n') : [];
       contributionSplit.forEach(member => {
         const [name, split] = member.split(splitType === 'amount' ? ': $' : ': ');
         addMember(name.trim(), splitType === 'amount' ? split.trim() : parseFloat(split).toFixed(2));
+      });
+
+      const whoPaid = formData.whoPaid ? formData.whoPaid.split('\n') : [];
+      whoPaid.forEach(payer => {
+        const [name, amount] = payer.split(': $');
+        addPayer(name.trim(), amount.trim());
       });
 
       document.getElementById('addPayer').addEventListener('click', () => addPayer());
@@ -438,38 +469,6 @@
         console.error('billForm element not found');
       }
     });
-
-    function addPayer(name = '', amount = '') {
-      const payersDiv = document.getElementById('payers');
-      const payerDiv = document.createElement('div');
-      payerDiv.className = 'payer';
-
-      const select = document.createElement('select');
-      select.className = 'payer-dropdown';
-
-      // Populate options for payers dropdown
-      people.forEach(person => {
-        const option = document.createElement('option');
-        option.value = person.name;
-        option.textContent = `${person.name} (${person.email})`;
-        if (person.name === name) {
-          option.selected = true;
-        }
-        select.appendChild(option);
-      });
-
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.step = '0.01';
-      input.placeholder = 'Payer Amount';
-      input.value = amount;
-
-      payerDiv.appendChild(select);
-      payerDiv.appendChild(input);
-
-      payersDiv.appendChild(payerDiv);
-      $(select).select2(); // Initialize Select2 on the new select element
-    }
   </script>
 </body>
 </html>
