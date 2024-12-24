@@ -218,41 +218,38 @@
   $('.payer-dropdown, .member-dropdown').select2();
 }
 
-    // Function to switch between Percentage and Dollar Amount
     function switchSplitType(type) {
       splitType = type;
       const members = document.querySelectorAll('.member');
-      members.forEach(member => {
+      const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
+      let totalSplit = 0;
+
+      members.forEach((member, index) => {
         const input = member.querySelector('input[type="number"]');
         const currentSplit = parseFloat(input.value);
 
         if (splitType === 'amount') {
-          const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
-          input.value = (currentSplit / 100) * totalAmount; // Convert percentage to dollar amount
+          input.value = ((currentSplit / 100) * totalAmount).toFixed(2); // Convert percentage to dollar amount
         } else {
-          const totalAmount = parseFloat(document.querySelector('[name="amount"]').value);
-          input.value = (currentSplit / totalAmount) * 100; // Convert dollar amount to percentage
+          input.value = ((currentSplit / totalAmount) * 100).toFixed(2); // Convert dollar amount to percentage
         }
+
+        totalSplit += parseFloat(input.value);
       });
 
-      updateDropdownOptions();
-
-      // Toggle active class on buttons
-      const percentageButton = document.getElementById('percentageButton');
-      const amountButton = document.getElementById('amountButton');
-
-      // Remove the active class from both buttons
-      percentageButton.classList.remove('active');
-      amountButton.classList.remove('active');
-
-      // Add the active class to the selected button
-      if (type === 'percentage') {
-        percentageButton.classList.add('active');
-      } else {
-        amountButton.classList.add('active');
+      // Adjust the last member's split to ensure the total adds up correctly
+      if (members.length > 0) {
+        const lastMemberInput = members[members.length - 1].querySelector('input[type="number"]');
+        if (splitType === 'amount') {
+          lastMemberInput.value = (totalAmount - (totalSplit - parseFloat(lastMemberInput.value))).toFixed(2);
+        } else {
+          lastMemberInput.value = (100 - (totalSplit - parseFloat(lastMemberInput.value))).toFixed(2);
+        }
       }
-    }
 
+      updateDropdownOptions();
+    }
+    
     function addPayer() {
   const payersDiv = document.getElementById('payers');
 
