@@ -327,33 +327,6 @@
         }
       });
 
-      // Validate Payer Amount values
-      let totalPayerAmount = 0;
-      const payerInputs = document.querySelectorAll('.payer input[type="number"]');
-      if (payerInputs.length > 0) {
-        payerInputs.forEach(input => {
-          const payerAmount = parseFloat(input.value);
-          if (!input.value || payerAmount <= 0) {
-            input.style.borderColor = 'red';
-            isValid = false;
-          } else {
-            input.style.borderColor = ''; // Reset border color if valid
-            totalPayerAmount += payerAmount;
-          }
-        });
-
-        // Check if total payer amount matches total amount
-        if (totalPayerAmount !== totalAmount) {
-          alert('The total amount paid must equal the total amount of the bill.');
-          isValid = false;
-        }
-      }
-
-      if (!isValid) {
-        alert('Total Amount / Members / Payer Amount cannot be empty or invalid.');
-        return;
-      }
-
       submitButton.disabled = true;
       submitButton.textContent = 'Processing...';
       submitButton.style.backgroundColor = '#ccc';
@@ -378,13 +351,19 @@
       });
 
       // Validate based on Split Type
-      if (splitType === 'percentage' && totalSplit !== 100) {
-        alert('The total split percentage must equal 100%.');
-        isValid = false;
-      } else if (splitType === 'amount' && totalDollarAmount !== totalAmount) {
-        alert('The total amount of splits must equal the total amount.');
-        isValid = false;
-      }
+      if (splitType === 'percentage') {
+        // Ensure that total percentage split exactly equals 100%
+        if (totalSplit !== 100) {
+            alert(`The total split percentage must equal 100%. You have entered ${totalSplit}%. Please adjust the splits.`);
+            isValid = false;
+        }
+      } else if (splitType === 'amount') {
+        // Ensure that total dollar amount of splits exactly equals the total amount
+        if (totalDollarAmount !== totalAmount) {
+            alert(`The total amount of splits must equal the total bill amount. You have split $${totalDollarAmount.toFixed(2)} but the total bill is $${totalAmount.toFixed(2)}. Please adjust the splits.`);
+            isValid = false;
+        }
+     }
 
       if (isValid) {
         const formData = {

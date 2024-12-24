@@ -349,13 +349,19 @@
       });
 
       // Validate based on Split Type
-      if (splitType === 'percentage' && totalSplit > 100) {
-        alert('The total split percentage cannot exceed 100%.');
-        isValid = false;
-      } else if (splitType === 'amount' && totalDollarAmount > totalAmount) {
-        alert('The total amount of splits cannot exceed the total amount.');
-        isValid = false;
-      }
+        if (splitType === 'percentage') {
+            // Ensure that total percentage split exactly equals 100%
+            if (totalSplit !== 100) {
+                alert(`The total split percentage must equal 100%. You have entered ${totalSplit}%. Please adjust the splits.`);
+                isValid = false;
+            }
+        } else if (splitType === 'amount') {
+            // Ensure that total dollar amount of splits exactly equals the total amount
+            if (totalDollarAmount !== totalAmount) {
+                alert(`The total amount of splits must equal the total bill amount. You have split $${totalDollarAmount.toFixed(2)} but the total bill is $${totalAmount.toFixed(2)}. Please adjust the splits.`);
+                isValid = false;
+            }
+        }
 
       if (isValid) {
         const formData = {
