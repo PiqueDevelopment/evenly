@@ -147,7 +147,7 @@
     </div>
 
     <div>
-      <label>Who Paid (Optional):</label><br>
+      <label>Who Paid:</label><br>
       <div id="payers"></div>
       <div class="payer-buttons">
         <button type="button" onclick="addPayer()">Add Payer</button>
@@ -319,15 +319,16 @@
       let totalSplit = 0;
       let totalDollarAmount = 0;
       let isValid = true;
+      let errorMessage = '';
 
       // Check for at least one member and one payer
       if (document.querySelectorAll('.member').length === 0) {
-        alert('Please add at least one member.');
+        errorMessage += 'Please add at least one member.\n';
         isValid = false;
       }
 
       if (document.querySelectorAll('.payer').length === 0) {
-        alert('Please add at least one payer.');
+        errorMessage += 'Please add at least one payer.\n';
         isValid = false;
       }
 
@@ -351,12 +352,12 @@
       // Validate based on Split Type
       if (splitType === 'percentage') {
         if (totalSplit !== 100) {
-          alert(`The total split percentage must equal 100%. You have entered ${totalSplit}%. Please adjust the splits.`);
+          errorMessage += `The total split percentage must equal 100%. You have entered ${totalSplit}%. Please adjust the splits.\n`;
           isValid = false;
         }
       } else if (splitType === 'amount') {
         if (totalDollarAmount !== totalAmount) {
-          alert(`The total amount of splits must equal the total bill amount. You have split $${totalDollarAmount.toFixed(2)} but the total bill is $${totalAmount.toFixed(2)}. Please adjust the splits.`);
+          errorMessage += `The total amount of splits must equal the total bill amount. You have split $${totalDollarAmount.toFixed(2)} but the total bill is $${totalAmount.toFixed(2)}. Please adjust the splits.\n`;
           isValid = false;
         }
       }
@@ -367,9 +368,21 @@
         .reduce((acc, value) => acc + value, 0);
 
       if (payerTotal !== totalAmount) {
-        alert(`The total of payer amounts must equal the total bill amount. You have entered $${payerTotal.toFixed(2)} but the total bill is $${totalAmount.toFixed(2)}. Please adjust the payer amounts.`);
+        errorMessage += `The total of payer amounts must equal the total bill amount. You have entered $${payerTotal.toFixed(2)} but the total bill is $${totalAmount.toFixed(2)}. Please adjust the payer amounts.\n`;
         isValid = false;
       }
+
+      // Validate Split values
+      document.querySelectorAll('.member input[type="number"]').forEach(input => {
+        const value = parseFloat(input.value);
+        if (isNaN(value) || value <= 0 || input.value.split('.')[1]?.length > 2) {
+          input.style.borderColor = 'red';
+          errorMessage += 'Split values must be positive numbers with up to two decimal places.\n';
+          isValid = false;
+        } else {
+          input.style.borderColor = ''; // Reset border color if valid
+        }
+      });
 
       // If validation passes, proceed to submit the form
       if (isValid) {
@@ -387,6 +400,8 @@
 
         google.script.run.addBillToSheet(formData);
         google.script.host.close();
+      } else {
+        alert(errorMessage);
       }
     }
 
