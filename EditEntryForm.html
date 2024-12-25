@@ -123,7 +123,7 @@
     </div>
 
     <div>
-      <label>Who Paid (Optional):</label><br>
+      <label>Who Paid:</label><br>
       <div id="payers"></div>
       <div class="payer-buttons">
         <button type="button" id="addPayer">Add Payer</button>
@@ -299,6 +299,7 @@
       const membersDiv = document.getElementById('members');
       const submitButton = document.getElementById('submitButton');
       let isValid = true;
+      let errorMessage = '';
 
       // Reset previous validation styles
       totalAmountInput.style.borderColor = '';
@@ -308,29 +309,23 @@
       const totalAmount = parseFloat(totalAmountInput.value);
       if (isNaN(totalAmount) || totalAmount <= 0) {
         totalAmountInput.style.borderColor = 'red';
+        errorMessage += 'Total amount must be a positive number.\n';
         isValid = false;
       }
 
       // Validate Members
       if (membersDiv.children.length === 0) {
         membersDiv.style.borderColor = 'red';
+        errorMessage += 'Please add at least one member.\n';
         isValid = false;
       }
 
-      // Check if payer totals match the total amount
-      const payerTotal = [...document.querySelectorAll('.payer')]
-        .map(payer => parseFloat(payer.querySelector('input[type="number"]').value))
-        .reduce((acc, value) => acc + value, 0);
-
-      if (payerTotal !== totalAmount) {
-        alert(`The total of payer amounts must equal the total bill amount. You have entered $${payerTotal.toFixed(2)} but the total bill is $${totalAmount.toFixed(2)}. Please adjust the payer amounts.`);
-        isValid = false;
-      }
-      
       // Validate Split values
       document.querySelectorAll('.member input[type="number"]').forEach(input => {
-        if (!input.value || parseFloat(input.value) <= 0) {
+        const value = parseFloat(input.value);
+        if (isNaN(value) || value <= 0 || input.value.split('.')[1]?.length > 2) {
           input.style.borderColor = 'red';
+          errorMessage += 'Split values must be positive numbers with up to two decimal places.\n';
           isValid = false;
         } else {
           input.style.borderColor = ''; // Reset border color if valid
@@ -364,20 +359,20 @@
       if (splitType === 'percentage') {
         // Ensure that total percentage split exactly equals 100%
         if (totalSplit !== 100) {
-            alert(`The total split percentage must equal 100%. You have entered ${totalSplit}%. Please adjust the splits.`);
+            errorMessage += `The total split percentage must equal 100%. You have entered ${totalSplit}%. Please adjust the splits.\n`;
             isValid = false;
         }
       } else if (splitType === 'amount') {
         // Ensure that total dollar amount of splits exactly equals the total amount
         if (totalDollarAmount !== totalAmount) {
-            alert(`The total amount of splits must equal the total bill amount. You have split $${totalDollarAmount.toFixed(2)} but the total bill is $${totalAmount.toFixed(2)}. Please adjust the splits.`);
+            errorMessage += `The total amount of splits must equal the total bill amount. You have split $${totalDollarAmount.toFixed(2)} but the total bill is $${totalAmount.toFixed(2)}. Please adjust the splits.\n`;
             isValid = false;
         }
      }
 
       if (isValid) {
-        const formData = {
-          uniqueId: JSON.parse('<?= formData ?>').uniqueId,
+        const formDataToSubmit = {
+          uniqueId: formData.uniqueId,
           description: document.querySelector('[name="description"]').value || '',
           date: document.querySelector('[name="date"]').value || '',
           totalAmount: totalAmount,
@@ -399,8 +394,9 @@
             submitButton.textContent = 'Submit';
             submitButton.style.backgroundColor = '#1abc9c';
           })
-          .updateBillInSheet(formData);
+          .updateBillInSheet(formDataToSubmit);
       } else {
+        alert(errorMessage);
         submitButton.disabled = false;
         submitButton.textContent = 'Submit';
         submitButton.style.backgroundColor = '#1abc9c';
