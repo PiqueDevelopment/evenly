@@ -370,6 +370,16 @@
         }
      }
 
+     // Check if payer totals match the total amount
+      const payerTotal = [...document.querySelectorAll('.payer')]
+        .map(payer => parseFloat(payer.querySelector('input[type="number"]').value))
+        .reduce((acc, value) => acc + value, 0);
+
+      if (payerTotal !== totalAmount) {
+        errorMessage += `The total of payer amounts must equal the total bill amount. You have entered $${payerTotal.toFixed(2)} but the total bill is $${totalAmount.toFixed(2)}. Please adjust the payer amounts.\n`;
+        isValid = false;
+      }
+
       if (isValid) {
         const formDataToSubmit = {
           uniqueId: formData.uniqueId,

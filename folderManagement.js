@@ -42,16 +42,21 @@ if (folders.hasNext()) {
 
 // Retrieves or creates a folder for the specific sheet inside the main folder
 function getOrCreateSheetFolder(mainFolder, sheetName) {
-Logger.log('Checking if sheet folder exists: ' + sheetName);
-const folders = mainFolder.getFoldersByName(sheetName);
-if (folders.hasNext()) {
-  Logger.log('Sheet folder found: ' + sheetName);
-  return folders.next();
-} else {
-  Logger.log('Sheet folder not found, creating new one: ' + sheetName); 
-  return mainFolder.createFolder(sheetName);
+  Logger.log('Checking if sheet folder exists: ' + sheetName);
+  
+  const folders = mainFolder.getFoldersByName(sheetName);
+  if (folders.hasNext()) {
+    // Folder with the same name already exists, log and return the existing folder
+    Logger.log('Sheet folder found: ' + sheetName);
+    SpreadsheetApp.getUi().alert('A folder with the name "' + sheetName + '" already exists. Please change the name of this SubSheet.');
+    return folders.next();  // Return the existing folder
+  } else {
+    // Folder does not exist, so create a new one
+    Logger.log('Sheet folder not found, creating new one: ' + sheetName);
+    return mainFolder.createFolder(sheetName);
+  }
 }
-}
+
 
 // Retrieves or creates a folder for the unique bill entry inside the sheet folder
 function getOrCreateEntryFolder(sheetFolder, uniqueId) {
