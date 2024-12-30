@@ -25,7 +25,7 @@ function addBillToSheet(data) {
       
       // Format the header row (bold, color, center alignment)
       var headerRange = sheet.getRange(1, 1, 1, 8);
-      headerRange.setFontWeight('bold').setBackground('#f0f0f0').setFontColor('#333333').setHorizontalAlignment('center');
+      headerRange.setFontWeight('bold').setBackground('#e5e5fa').setFontColor('#333333').setHorizontalAlignment('left');
       
       // Freeze the header row
       sheet.setFrozenRows(1);
