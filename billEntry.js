@@ -66,7 +66,7 @@ function addBillToSheet(data) {
     const folderUrl = createFolderStructure(sheet.getParent(), uniqueId);
   
     // Add a new row for the bill data
-    sheet.appendRow([uniqueId, description, date, totalAmount, payers.map(p => `${p.name}: $${p.payerAmount}`).join('\n'), contributionSplit, balanceSplit, folderUrl]);
+    sheet.appendRow([uniqueId, description, date, '$' + totalAmount, payers.map(p => `${p.name}: $${p.payerAmount}`).join('\n'), contributionSplit, balanceSplit, folderUrl]);
   
     // Format the total amount cell (bold, red font color)
     const totalAmountCell = sheet.getRange(sheet.getLastRow(), 4); // Column D is the total amount
@@ -89,7 +89,9 @@ function updateTotalAmount() {
     
     // Prepare the text for the cell
     const labelText = 'Total Amount: ';
-    const amountText = '$' + totalSum.toFixed(2);
+    
+    // Add commas and format the totalSum (use toLocaleString for number formatting)
+    const amountText = '$' + totalSum.toLocaleString();  // This adds commas
     
     // Create a RichText object
     const richText = SpreadsheetApp.newRichTextValue()
@@ -104,5 +106,6 @@ function updateTotalAmount() {
     // Auto-resize columns D and F based on content
     autoResizeColumnsD_F_G(sheet);
 }
+
 
   
