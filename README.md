@@ -1,60 +1,91 @@
-# Evenly - Bill Splitting App :money_with_wings:
+# **Evenly** - Bill Splitting App 💸
 
-**Evenly** is a streamlined and efficient web application designed for easily splitting bills among multiple users. Whether for group dinners, shared events, or any communal expense, this app ensures that everyone pays their fair share. Developed for **Asha Hope Amanaki**, Evenly allows users to input details about shared expenses, automatically calculate individual contributions, and track balances for seamless settlement.
+**Evenly** is a user-friendly and efficient web application designed to simplify the process of splitting bills among multiple users. Whether it's for a group dinner, shared event, or any communal expense, Evenly ensures that everyone pays their fair share. This app allows users to input bill details, automatically calculate individual contributions, and track balances for seamless settlement.
 
-## Features 🚀
+---
 
-- **User-Friendly Interface**: Clean, intuitive form-based interface to input and manage bills.
-- **Bill Entry**: Capture essential details of the bill including description, total amount, date, and participants.
-- **Automatic Splitting**: Calculate contributions either by percentage or fixed amount. You can split the bill based on predefined shares or let the app automatically calculate the distribution.
-- **Balance Calculation**: Easily track how much each person owes or is owed. The app provides a clear breakdown of who has paid and how the balance should be settled.
-- **Dynamic Member Management**: Add or remove people involved in the bill, with real-time calculation adjustments.
-- **Unique Bill ID**: Each bill entry is tagged with a unique identifier for easier tracking and reference.
-- **Folder Integration**: Automatically generates a unique folder structure for each bill, storing related documents and links for easy access.
-- **Responsive Design**: Fully responsive, providing a great experience on both desktop and mobile devices.
+## **Features** 🚀
 
-## Technologies Used 🛠️
+- **Intuitive Interface**: Clean, form-based UI to easily input and manage bills.
+- **Bill Entry**: Quickly capture key details such as bill description, total amount, date, and participants.
+- **Automatic Splitting**: Seamlessly switch between different split types, with automatic conversion based on the selected method.
+- **Balance Tracking**: View real-time calculations of what each individual owes or is owed, making it easy to settle the bill.
+- **Dynamic Member Management**: Effortlessly add or remove participants, with instant updates to bill splits.
+- **Unique Bill ID**: Each bill entry is assigned a unique identifier for easy tracking and reference.
+- **Folder Integration**: Automatically generates a Google Drive folder for each bill entry, storing relevant documents and links.
+- **Responsive Design**: Fully responsive layout, ensuring a seamless experience across desktop and mobile devices.
 
-- **HTML**: For structuring the app's user interface.
-- **CSS**: For styling and layout of the app.
-- **JavaScript**: To handle the app’s logic, calculations, and dynamic content updates.
-- **Google Apps Script**: Used for backend functionality, including the generation of unique IDs and integration with Google Sheets to store and manage bill data.
-- **Google Drive API**: To create and manage folder structures for each bill, facilitating document organization and sharing.
+---
 
-## User Workflow 👥
+## **Technologies Used** 🛠️
 
-1. **Enter Bill Details**: Users input the bill description, date, total amount, and add participants (members).
-2. **Define Payment Split**: Select whether the split should be based on percentages or fixed amounts. The app automatically calculates how much each person owes.
-3. **Track Payments**: Specify who has paid and the amount paid. The app adjusts the balance and calculates how much each person needs to pay or receive to settle the bill.
-4. **Submit**: Upon submission, the app saves the bill entry to Google Sheets and generates a unique folder for document management.
+- **HTML**: For structuring the app’s interface.
+- **CSS**: For styling the layout and design.
+- **JavaScript**: Handles the app’s logic, calculations, and dynamic content updates.
+- **Google Apps Script**: Powers backend functionality, generating unique IDs and integrating with Google Sheets for bill management.
+- **Google Drive API**: Manages folder creation and document storage linked to each bill entry.
 
-## Inputs 📝
+---
 
-Users will provide the following information to record a bill:
+## **User Workflow** 👥
+
+To add and manage bills in Evenly, follow these steps:
+
+### 1. **Access the Bill Splitting Script**:
+   - Open your Google Sheets document linked with the app.
+   - In the top navigation bar, click on **Bill Splitting** to access the app's script.
+
+### 2. **Add or Edit an Entry**:
+   - Select **Add Entry** to create a new bill entry, or choose **Edit Entry** to modify an existing entry.
+
+### 3. **Fill Out the Form**:
+   - A form will appear where you can input the following details:
+     - **Description**: A brief title or description of the bill (e.g., "Dinner at XYZ restaurant").
+     - **Date**: The date the bill was incurred.
+     - **Total Amount**: The full total amount of the bill.
+     - **Contribution Type**: Choose whether the bill should be split by **Percentage** or **Dollar Amount**.
+     - **Participants**: List the people sharing the bill.
+     - **Payments**: Indicate which participants have already paid for the bill.
+
+### 4. **Submit the Entry**:
+   - After entering the necessary information, press the **Submit** button. This will:
+     - Save the bill entry to the associated Google Sheet.
+     - Generate a unique ID for the entry.
+     - Create a folder in Google Drive to store any related documents for the bill.
+
+---
+
+## **Inputs** 📝
+
+To add a bill, users will need to provide the following details:
 
 - **Description**: A brief description of the bill (e.g., "Dinner at restaurant").
 - **Date**: The date when the bill was incurred.
-- **Total Amount**: The total amount for the bill.
-- **Contribution Type**: Either by percentage or dollar amount.
-- **People Involved**: List of individuals sharing the bill and individuals who have paid.
+- **Total Amount**: The total amount of the bill.
+- **Split Type**: Choose either **Percentage** or **Dollar Amount**.
+- **People Involved**: A list of individuals who are sharing the bill and those who have already paid.
 
-## Outputs 📊
+---
 
-For each bill, the app generates the following outputs:
+## **Outputs** 📊
 
-- **Unique ID**: A unique identifier for the bill entry.
+Each bill entry will generate the following outputs:
+
+- **Unique Bill ID**: A unique identifier for the bill.
 - **Description**: The description provided by the user.
 - **Date**: The date the bill was recorded.
 - **Total Amount**: The total amount of the bill.
-- **Who Paid**: Details of the individuals who paid, including the amount they contributed.
-- **Contribution Split**: A breakdown of each person’s contribution, either as a percentage or fixed amount.
-- **Balance Split**: The amount each individual owes or is owed after factoring in payments made.
-- **Folder Link**: A Google folder where you can upload documents/files for that specific entry.
+- **Who Paid**: A breakdown of the individuals who have made payments and the amounts they contributed.
+- **Contribution Split**: A detailed list showing each person's share of the bill, calculated based on either percentage or fixed amount.
+- **Balance Split**: The amount each individual owes or is owed after factoring in payments already made.
+- **Folder Link**: A link to the Google Drive folder containing related documents for the bill.
 
-## Contribution 🤝
+---
 
-We welcome contributions to improve the Evenly app! If you would like to contribute, please fork the repository, make your changes, and submit a pull request.
+## **Contribution** 🤝
 
-For any questions or feedback, please reach out to:
+We welcome contributions to enhance and improve the Evenly app! If you're interested in contributing, please fork the repository, make your changes, and submit a pull request.
+
+For any questions or feedback, feel free to reach out to the development team:
 - [Brendon Tran](mailto:brendontran21@gmail.com)
 - [Dylan Liu](mailto:dliuninja@gmail.com)
