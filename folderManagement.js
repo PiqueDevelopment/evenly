@@ -29,15 +29,19 @@ function createFolderStructure(parentFolder, uniqueId) {
 
 // Retrieves or creates the main folder by name
 function getOrCreateMainFolder(folderName) {
-Logger.log('Checking if main folder exists: ' + folderName);  
-const folders = DriveApp.getFoldersByName(folderName);
-if (folders.hasNext()) {
-  Logger.log('Main folder found: ' + folderName); 
-  return folders.next();
-} else {
-  Logger.log('Main folder not found, creating new one: ' + folderName); 
-  return DriveApp.createFolder(folderName);
-}
+  Logger.log('Checking if main folder exists: ' + folderName);  
+  const folders = DriveApp.getFoldersByName(folderName);
+  if (folders.hasNext()) {
+    Logger.log('Main folder found: ' + folderName); 
+    const folder = folders.next();
+    folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.EDIT); // Set permissions
+    return folder;
+  } else {
+    Logger.log('Main folder not found, creating new one: ' + folderName); 
+    const newFolder = DriveApp.createFolder(folderName);
+    newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.EDIT); // Set permissions
+    return newFolder;
+  }
 }
 
 // Retrieves or creates a folder for the specific sheet inside the main folder
@@ -48,25 +52,31 @@ function getOrCreateSheetFolder(mainFolder, sheetName) {
   if (folders.hasNext()) {
     // Folder with the same name already exists, log and return the existing folder
     Logger.log('Sheet folder found: ' + sheetName);
-    SpreadsheetApp.getUi().alert('A folder with the name "' + sheetName + '" already exists. Please change the name of this SubSheet.');
-    return folders.next();  // Return the existing folder
+    const folder = folders.next();
+    folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.EDIT); // Set permissions
+    return folder;
   } else {
     // Folder does not exist, so create a new one
     Logger.log('Sheet folder not found, creating new one: ' + sheetName);
-    return mainFolder.createFolder(sheetName);
+    const newFolder = mainFolder.createFolder(sheetName);
+    newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.EDIT); // Set permissions
+    return newFolder;
   }
 }
 
-
 // Retrieves or creates a folder for the unique bill entry inside the sheet folder
 function getOrCreateEntryFolder(sheetFolder, uniqueId) {
-Logger.log('Checking if entry folder exists with unique ID: ' + uniqueId); 
-const folders = sheetFolder.getFoldersByName(uniqueId);
-if (folders.hasNext()) {
-  Logger.log('Entry folder found with unique ID: ' + uniqueId); 
-  return folders.next();
-} else {
-  Logger.log('Entry folder not found, creating new one with unique ID: ' + uniqueId); 
-  return sheetFolder.createFolder(uniqueId);
-}
+  Logger.log('Checking if entry folder exists with unique ID: ' + uniqueId); 
+  const folders = sheetFolder.getFoldersByName(uniqueId);
+  if (folders.hasNext()) {
+    Logger.log('Entry folder found with unique ID: ' + uniqueId); 
+    const folder = folders.next();
+    folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.EDIT); // Set permissions
+    return folder;
+  } else {
+    Logger.log('Entry folder not found, creating new one with unique ID: ' + uniqueId); 
+    const newFolder = sheetFolder.createFolder(uniqueId);
+    newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.EDIT); // Set permissions
+    return newFolder;
+  }
 }
